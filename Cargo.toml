@@ -1,0 +1,68 @@
+[package]
+name = "bevy_audio_controller"
+version = "0.1.0"
+edition = "2021"
+authors = ["TurtIeSocks"]
+license = "MIT OR Apache-2.0"
+description = "Bevy plugin for managed audio playback"
+repository = "https://github.com/TurtIeSocks/bevy_audio_controller"
+homepage = "https://github.com/TurtIeSocks/bevy_audio_controller"
+keywords = ["bevy", "gamedev", "audio", "music"]
+categories = ["game-development", "multimedia::audio"]
+readme = "./README.md"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+bevy = { version = "0.14", default-features = false, features = [
+  "bevy_audio",
+  "bevy_asset",
+] }
+
+[build-dependencies]
+symphonia = { version = "0.5", default-features = false }
+cargo-emit = "0.2.1"
+
+[features]
+default = []
+
+inspect = []
+
+# Pass features to symphonia
+# aac = ["symphonia/aac"]
+# adpcm = ["symphonia/adpcm"]
+# alac = ["symphonia/alac"]
+flac = ["symphonia/flac", "bevy/flac"]
+# caf = ["symphonia/caf"]
+# isomp4 = ["symphonia/isomp4"]
+# mkv = ["symphonia/mkv"]
+# mp1 = ["symphonia/mp1"]
+# mp2 = ["symphonia/mp2"]
+mp3 = ["symphonia/mp3", "bevy/mp3"]
+ogg = ["symphonia/ogg", "symphonia/vorbis", "bevy/vorbis"]
+# pcm = ["symphonia/pcm"]
+# aiff = ["symphonia/aiff"]
+# vorbis = ["symphonia/vorbis", "bevy/vorbis"]
+wav = ["symphonia/wav", "symphonia/pcm", "bevy/wav"]
+
+all-codecs = ["flac", "mp3", "ogg", "wav"]
+
+[dev-dependencies]
+bevy = { version = "0.14", features = [
+  "bevy_audio",
+  "bevy_asset",
+  "bevy_render",
+  "bevy_core_pipeline",
+] }
+bevy-inspector-egui = { version = "0.27.0" }
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "advanced"
+path = "examples/advanced.rs"
+required-features = ["ogg", "inspect"]
