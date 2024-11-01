@@ -10,6 +10,9 @@ use bevy_audio_controller::prelude::{AudioControllerEvent, AudioControllerPlugin
 #[derive(Component, Default)]
 struct SfxChannel;
 
+/// Type alias for the SFX audio event to minimize boilerplate
+type SfxEvent = AudioControllerEvent<SfxChannel>;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
@@ -59,8 +62,8 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn play_with_plugin(mut ew: EventWriter<AudioControllerEvent<SfxChannel>>) {
-    ew.send(AudioControllerEvent::<SfxChannel>::new("fire.ogg"));
+fn play_with_plugin(mut ew: EventWriter<SfxEvent>) {
+    ew.send(SfxEvent::new("fire.ogg"));
 }
 
 fn play_without_plugin(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -74,6 +77,7 @@ fn play_without_plugin(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 }
 
+/// Only relevant to this example to clean up the audio from the previous state
 fn despawn_on_change(mut commands: Commands, query: Query<Entity, With<AudioSink>>) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();

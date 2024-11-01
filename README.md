@@ -9,33 +9,26 @@ The build script will automatically filter through your assets folder and determ
 
 Be sure to check out the examples to see how to use this plugin.
 
-## Cargo Features
+## Usage
 
-### `default`
+```rust
+#[derive(Component, Default)]
+struct SfxChannel;
 
-None
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        // Add the plugin to the app, since it is generic, you can add as many channels as you want
+        .add_plugins(AudioControllerPlugin::<SfxChannel>::default())
+        .add_systems(Update, play_with_plugin)
+        .run();
+}
 
-### `inspect`
-
-Adds additional reflection traits to the structs used by this plugin to make them available in `bevy-egui-inspector`
-
-**Requires that channel components must also derive `Reflect`**
-
-### `mp3`
-
-Enables support for MP3 audio files.
-
-### `ogg`
-
-Enables support for OGG audio files
-
-### `flac`
-
-Enables support for FLAC audio files
-
-### `wav`
-
-Enables support for WAV audio files
+fn play_with_plugin(mut ew: EventWriter<SfxEvent>) {
+    // even though this is called on every frame, it will only be played once the previous clip has finished
+    ew.send(SfxEvent::new("fire.ogg"));
+}
+```
 
 ## Examples
 
@@ -64,9 +57,41 @@ Demonstrates:
 - Further tweaking the `AudioSink` components after the plugin has spawned them
 - How the `inspect` feature can be used to show more information in bevy-egui-inspector
 
+Inputs:
+
+- Space Bar: Force a sound to play and ignore the controller
+
 ```sh
   cargo run --example advanced --all-features
 ```
+
+## Cargo Features
+
+### `default`
+
+None
+
+### `inspect`
+
+Adds additional reflection traits to the structs used by this plugin to make them available in `bevy-egui-inspector`
+
+**Requires that channel components must also derive `Reflect`**
+
+### `mp3`
+
+Enables support for MP3 audio files.
+
+### `ogg`
+
+Enables support for OGG audio files
+
+### `flac`
+
+Enables support for FLAC audio files
+
+### `wav`
+
+Enables support for WAV audio files
 
 ## Bevy support table
 

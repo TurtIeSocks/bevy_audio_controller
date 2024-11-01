@@ -12,7 +12,6 @@ categories = ["game-development", "multimedia::audio"]
 readme = "./README.md"
 
 [lib]
-path = "src/lib.rs"
 
 [dependencies]
 bevy = { version = "0.14", default-features = false, features = [
