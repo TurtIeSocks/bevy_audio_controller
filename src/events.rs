@@ -13,7 +13,6 @@ pub struct PlayEvent<T: Component + Default> {
     pub(super) parent: Option<Entity>,
     pub(super) settings: Option<PlaybackSettings>,
     pub(super) force: bool,
-    // pub(super) handler: Option<Handle<AudioSource>>,
     _marker: PhantomData<T>,
 }
 
@@ -24,7 +23,6 @@ impl<T: Component + Default> PlayEvent<T> {
             parent: None,
             settings: None,
             force: false,
-            // handler: None,
             _marker: PhantomData::<T>,
         }
     }
@@ -45,11 +43,6 @@ impl<T: Component + Default> PlayEvent<T> {
         self.settings = Some(settings);
         self
     }
-
-    // pub fn with_handler(mut self, handler: Handle<AudioSource>) -> Self {
-    //     self.handler = Some(handler);
-    //     self
-    // }
 }
 
 impl<Channel: Component + Default> From<AudioFiles> for PlayEvent<Channel> {

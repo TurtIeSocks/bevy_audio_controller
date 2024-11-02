@@ -1,14 +1,7 @@
-use bevy::{
-    input::common_conditions::input_just_pressed, log::LogPlugin, prelude::*,
-    time::common_conditions::on_timer, utils::Duration,
-};
+use bevy::{input::common_conditions::input_just_pressed, log::LogPlugin, prelude::*};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use bevy_audio_controller::{
-    markers::FireOGG,
-    prelude::{AudioControllerPlugin, PlayEvent},
-    AudioFiles,
-};
+use bevy_audio_controller::prelude::*;
 
 #[derive(Component, Default, Reflect)]
 struct MusicChannel;
@@ -26,25 +19,23 @@ fn main() {
             ..Default::default()
         }))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_plugins((
-            AudioControllerPlugin::<MusicChannel>::default(),
-            AudioControllerPlugin::<SfxChannel>::default(),
-        ))
+        .add_plugins(AudioControllerPlugin)
+        .register_audio_channel::<MusicChannel>()
+        .register_audio_channel::<SfxChannel>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
             (
                 play_sfx,
-                // play_sfx.run_if(on_timer(Duration::from_secs_f32(1.0))),
                 force_play.run_if(input_just_pressed(KeyCode::Space)),
             ),
         )
-        // .add_systems(PostUpdate, (do_something_with_fire))
+        .add_systems(PostUpdate, (do_something_with_sfx, do_something_with_fire))
         .run();
 }
 
 fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
-    ew.send(PlayEvent::<MusicChannel>::new("background.ogg"));
+    ew.send(PlayEvent::<MusicChannel>::new("background.ogg".into()));
     commands.spawn((Name::new("SFX Container"), SfxParent));
     commands.spawn(Camera2dBundle::default());
     commands
@@ -82,15 +73,21 @@ fn play_sfx(
         return;
     }
     let parent_entity = parent_query.single();
-    ew.send(PlayEvent::<SfxChannel>::from(AudioFiles::FireOGG).with_parent(parent_entity));
-    // ew.send(AudioControllerEvent::<SfxChannel>::new("spray.ogg").with_parent(parent_entity));
+    ew.send(
+        PlayEvent::<SfxChannel>::from(AudioFiles::FireOGG)
+            .with_settings(PlaybackSettings::DESPAWN)
+            .with_parent(parent_entity),
+    );
+    ew.send(
+        PlayEvent::<SfxChannel>::new("spray.ogg".into()).with_settings(PlaybackSettings::DESPAWN),
+    );
 }
 
 fn do_something_with_sfx(
     sfx_query: Query<(Entity, &Name, &AudioSink), (Added<AudioSink>, With<SfxChannel>)>,
 ) {
     for (entity, name, sink) in sfx_query.iter() {
-        sink.set_volume(0.5);
+        sink.set_volume(0.75);
         info!(
             "Sfx: {} ({}) is playing at volume {}",
             name,
@@ -100,34 +97,24 @@ fn do_something_with_sfx(
     }
 }
 
-// fn do_something_with_fire(
-//     sfx_query: Query<(Entity, &Name, &AudioSink), (Added<AudioSink>, With<FireOGG>)>,
-// ) {
-//     for (entity, name, sink) in sfx_query.iter() {
-//         sink.set_speed(1.5);
-//         info!(
-//             "Fire: {} ({}) is playing at speed {}",
-//             name,
-//             entity,
-//             sink.speed()
-//         );
-//     }
-// }
-
-fn do_something_with_fire(sfx_query: Query<(Entity, &Name, &AudioSink), (Changed<AudioSink>)>) {
+fn do_something_with_fire(
+    sfx_query: Query<(Entity, &Name, &AudioSink), (Added<AudioSink>, With<FireOGG>)>,
+) {
     for (entity, name, sink) in sfx_query.iter() {
-        // sink.set_speed(1.5);
-
+        sink.set_speed(2.5);
         info!(
-            "SFX: {} ({}) is playing at speed {} - {}",
+            "Fire: {} ({}) is playing at speed {}",
             name,
             entity,
-            sink.speed(),
-            sink.is_paused(),
+            sink.speed()
         );
     }
 }
 
 fn force_play(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
-    ew.send(PlayEvent::<SfxChannel>::new("fire.ogg").with_force());
+    ew.send(
+        PlayEvent::<SfxChannel>::new("fire.ogg".into())
+            .with_force()
+            .with_settings(PlaybackSettings::DESPAWN),
+    );
 }

@@ -62,6 +62,6 @@ path = "examples/basic.rs"
 required-features = ["ogg"]
 
 [[example]]
-name = "advanced"
-path = "examples/advanced.rs"
-required-features = ["ogg", "inspect"]
+name = "multiple"
+path = "examples/multiple.rs"
+required-features = ["ogg"]
