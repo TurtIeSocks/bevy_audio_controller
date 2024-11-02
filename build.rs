@@ -112,12 +112,14 @@ fn main() {
                 format!(
                     r#"
 pub mod ac_traits {{
+    use super::{{markers::*, audio_files::*}};
+
     pub trait InsertAudioTrack {{
-        fn insert_audio_track(&mut self, id: &str) -> &mut Self;
+        fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
     }}
 
     impl<'a> InsertAudioTrack for bevy::ecs::system::EntityCommands<'a> {{
-        fn insert_audio_track(&mut self, id: &str) -> &mut bevy::ecs::system::EntityCommands<'a> {{
+        fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
             match id {{
                 {}
                 _ => self,
@@ -142,6 +144,8 @@ pub mod ac_traits {{
                 format!(
                     r#"
 pub mod audio_files {{
+    use super::markers;
+
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum AudioFiles {{
         #[default]
@@ -159,8 +163,8 @@ pub mod audio_files {{
         }}
     }}
 
-    impl From<&String> for AudioFiles {{
-        fn from(file_name: &String) -> Self {{
+    impl From<&str> for AudioFiles {{
+        fn from(file_name: &str) -> Self {{
             match file_name {{
                 {}
                 _ => AudioFiles::Unknown,
@@ -174,9 +178,14 @@ pub mod audio_files {{
         }}
     }}
 
+    impl From<&String> for AudioFiles {{
+        fn from(file_name: &String) -> Self {{
+            Self::from(file_name.as_str())
+        }}
+    }}
 
     impl From<AudioFiles> for &str {{
-        fn from(file_name: AudioFiles) -> &str {{
+        fn from(file_name: AudioFiles) -> &'static str {{
             match file_name {{
                 {}
                 _ => "Unknown",
@@ -211,6 +220,43 @@ pub mod audio_files {{
                         .map(|f| f.get_enum_file_match())
                         .collect::<Vec<_>>()
                         .join("\n                ")
+                )
+                .as_ref(),
+            )
+            .unwrap();
+
+        marker_file
+            .write_all(
+                format!(
+                    r#"
+mod handler_plugin {{
+    use super::audio_files::AudioFiles;
+
+    pub(super) struct HandlerPlugin;
+    
+    impl bevy::app::Plugin for HandlerPlugin {{
+        fn build(&self, app: &mut bevy::app::App) {{
+            app.init_resource::<AssetLoader>().add_systems(bevy::app::Startup, |asset_server: bevy::ecs::system::Res<bevy::asset::AssetServer>, mut internal_loader: bevy::ecs::system::ResMut<AssetLoader>| {{
+                {}
+            }});
+        }}
+    }}
+
+    #[derive(Default, bevy::ecs::system::Resource)]
+    pub(super) struct AssetLoader {{
+        {}
+    }}
+
+    impl AssetLoader {{
+        pub(super) fn get(&self, id: &AudioFiles) -> Option<bevy::asset::Handle<bevy::audio::AudioSource>> {{
+            match id {{
+                {}
+                _ => None,
+            }}
+        }}
+    }}
+}}
+"#,files.iter().map(|f| f.asset_loader()).collect::<Vec<_>>().join("\n    "), files.iter().map(|f| f.asset_field()).collect::<Vec<_>>().join("\n    "),files.iter().map(|f| f.asset_getter()).collect::<Vec<_>>().join("\n    ")
                 )
                 .as_ref(),
             )
@@ -266,15 +312,39 @@ impl AudioFile {
     }
 
     fn insert_audio_track_impl(&self) -> String {
+        let struct_name = self.pascal_case();
         format!(
-            r#"{:?} => self.insert(markers::{}::DURATION),"#,
-            self.path,
-            self.pascal_case()
+            r#"AudioFiles::{} => self.insert({}::default()),"#,
+            struct_name, struct_name
         )
     }
 
     fn enum_creator(&self) -> String {
         format!("{},", self.pascal_case())
+    }
+
+    fn asset_field(&self) -> String {
+        let field_name = self.snake_case();
+        format!(
+            r#"        pub(super) {}: bevy::asset::Handle<bevy::audio::AudioSource>,"#,
+            field_name
+        )
+    }
+
+    fn asset_loader(&self) -> String {
+        format!(
+            r#"        internal_loader.{} = asset_server.load("{}");"#,
+            self.snake_case(),
+            self.path
+        )
+    }
+
+    fn asset_getter(&self) -> String {
+        format!(
+            r#"                AudioFiles::{} => Some(self.{}.clone()),"#,
+            self.pascal_case(),
+            self.snake_case()
+        )
     }
 
     fn get_marker_struct(&self) -> String {
@@ -349,6 +419,20 @@ impl AudioFile {
         }
 
         parts.concat()
+    }
+
+    fn snake_case(&self) -> String {
+        let mut snake_case = String::new();
+        let name = self.path.replace(&['/', '\\', '.', '-'][..], "_");
+        let mut prev_char = '\0';
+        for (i, ch) in name.chars().enumerate() {
+            if ch.is_uppercase() && i > 0 && prev_char != '_' {
+                snake_case.push('_');
+            }
+            snake_case.push(ch.to_ascii_lowercase());
+            prev_char = ch;
+        }
+        snake_case
     }
 }
 

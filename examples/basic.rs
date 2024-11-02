@@ -11,7 +11,8 @@ use bevy_audio_controller::prelude::*;
 struct SfxChannel;
 
 /// Type alias for the SFX audio event to minimize boilerplate
-type SfxEvent = PlayEvent<SfxChannel>;
+type SfxPlayEvent = PlayEvent<SfxChannel>;
+type SfxTrackEvent = TrackEvent<SfxChannel>;
 
 fn main() {
     App::new()
@@ -20,7 +21,8 @@ fn main() {
             ..Default::default()
         }))
         .add_plugins(WorldInspectorPlugin::new())
-        .add_plugins(AudioControllerPlugin::<SfxChannel>::default())
+        .add_plugins(AudioControllerPlugin)
+        .register_audio_channel::<SfxChannel>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -33,7 +35,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut ew: EventWriter<SfxTrackEvent>) {
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(NodeBundle {
@@ -60,10 +62,14 @@ fn setup(mut commands: Commands) {
                 ..Default::default()
             });
         });
+
+    ew.send(SfxTrackEvent::new(PlaybackSettings::DESPAWN).with_track(AudioFiles::FireOGG));
 }
 
-fn play_with_plugin(mut ew: EventWriter<SfxEvent>) {
-    ew.send(SfxEvent::new("fire.ogg"));
+fn play_with_plugin(mut ew: EventWriter<SfxPlayEvent>) {
+    ew.send(SfxPlayEvent::new(AudioFiles::FireOGG));
+    // You can send events using the enum values or a string
+    // ew.send(SfxPlayEvent::new("fire.ogg".into()));
 }
 
 fn play_without_plugin(mut commands: Commands, asset_server: Res<AssetServer>) {

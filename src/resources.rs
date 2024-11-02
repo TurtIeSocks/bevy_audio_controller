@@ -2,24 +2,24 @@ use std::{marker::PhantomData, sync::Mutex};
 
 use bevy::{
     audio::{PlaybackSettings, Volume},
-    ecs::system::Resource,
+    ecs::{component::Component, system::Resource},
     utils::hashbrown::HashMap,
 };
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
-use super::{audio_files::AudioFiles, bounds::Bounds};
+use super::audio_files::AudioFiles;
 
 #[derive(Default, Resource)]
 #[cfg_attr(feature = "inspect", derive(Reflect))]
 #[cfg_attr(feature = "inspect", reflect(Resource))]
-pub struct ChannelSettings<T: Bounds> {
+pub struct ChannelSettings<T: Component + Default> {
     volume: Mutex<Volume>,
     #[cfg_attr(feature = "inspect", reflect(ignore))]
     _marker: PhantomData<T>,
 }
 
-impl<T: Bounds> ChannelSettings<T> {
+impl<T: Component + Default> ChannelSettings<T> {
     pub fn get_volume(&self) -> f32 {
         self.volume.lock().unwrap().get()
     }
@@ -32,13 +32,13 @@ impl<T: Bounds> ChannelSettings<T> {
 #[derive(Default, Resource)]
 #[cfg_attr(feature = "inspect", derive(Reflect))]
 #[cfg_attr(feature = "inspect", reflect(Resource))]
-pub struct TrackSettings<T: Bounds> {
+pub struct TrackSettings<T: Component + Default> {
     track_map: HashMap<AudioFiles, PlaybackSettings>,
     #[cfg_attr(feature = "inspect", reflect(ignore))]
     _marker: PhantomData<T>,
 }
 
-impl<T: Bounds> TrackSettings<T> {
+impl<T: Component + Default> TrackSettings<T> {
     pub fn get_track_setting(&self, id: &AudioFiles) -> PlaybackSettings {
         self.track_map
             .get(id)

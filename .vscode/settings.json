@@ -1,13 +1,3 @@
 {
-  "editor.formatOnSave": true,
-  "rust-analyzer.cargo.buildScripts.overrideCommand": [
-    "cargo",
-    "check",
-    "--all-features",
-    "--all-targets",
-    "--message-format=json",
-    "--quiet",
-    "--workspace",
-    "--keep-going"
-  ],
+  "editor.formatOnSave": true
 }

@@ -5,13 +5,14 @@ use bevy::{
     ecs::component::Component,
 };
 
-use super::channel::ChannelRegistration;
+use super::{channel::ChannelRegistration, handler_plugin::HandlerPlugin};
 
 pub struct AudioControllerPlugin;
 
 impl Plugin for AudioControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.register_audio_channel::<GlobalAudioChannel>();
+        app.add_plugins(HandlerPlugin)
+            .register_audio_channel::<GlobalAudioChannel>();
     }
 }
 
