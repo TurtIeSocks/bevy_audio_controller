@@ -231,15 +231,9 @@ pub mod audio_files {{
                     r#"
 mod handler_plugin {{
     use super::audio_files::AudioFiles;
-
-    pub(super) struct HandlerPlugin;
     
-    impl bevy::app::Plugin for HandlerPlugin {{
-        fn build(&self, app: &mut bevy::app::App) {{
-            app.init_resource::<AssetLoader>().add_systems(bevy::app::Startup, |asset_server: bevy::ecs::system::Res<bevy::asset::AssetServer>, mut internal_loader: bevy::ecs::system::ResMut<AssetLoader>| {{
-                {}
-            }});
-        }}
+    pub(super) fn load_assets(asset_server: bevy::ecs::system::Res<bevy::asset::AssetServer>, mut internal_loader: bevy::ecs::system::ResMut<AssetLoader>) {{
+        {}
     }}
 
     #[derive(Default, bevy::ecs::system::Resource)]
