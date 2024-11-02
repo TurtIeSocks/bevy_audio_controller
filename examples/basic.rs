@@ -5,13 +5,13 @@ use bevy::{
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use bevy_audio_controller::prelude::{AudioControllerEvent, AudioControllerPlugin};
+use bevy_audio_controller::prelude::*;
 
 #[derive(Component, Default)]
 struct SfxChannel;
 
 /// Type alias for the SFX audio event to minimize boilerplate
-type SfxEvent = AudioControllerEvent<SfxChannel>;
+type SfxEvent = PlayEvent<SfxChannel>;
 
 fn main() {
     App::new()

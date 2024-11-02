@@ -12,6 +12,9 @@ Be sure to check out the examples to see how to use this plugin.
 ## Usage
 
 ```rust
+use bevy::prelude::*;
+use bevy_audio_controller::prelude::*;
+
 #[derive(Component, Default)]
 struct SfxChannel;
 

@@ -12,6 +12,7 @@ use symphonia::core::probe::Hint;
 use symphonia::default::get_probe;
 
 const ASSET_PATH_VAR: &str = "BEVY_ASSET_PATH";
+const OUTPUT_FILE_NAME: &str = "audio_controller.rs";
 
 fn main() {
     cargo_emit::rerun_if_env_changed!(ASSET_PATH_VAR);
@@ -70,67 +71,284 @@ fn main() {
         // cargo_emit::warning!("Asset folder found: {}", dir.to_string_lossy());
 
         let out_dir = env::var_os("OUT_DIR").unwrap();
-        let dest_path = Path::new(&out_dir).join("audio_lengths.rs");
 
-        let mut file = File::create(dest_path).unwrap();
-
-        file.write_all(
-            "/// Function for getting the length of an audio file by its path.
-fn get_audio_file_length(file_name: &str) -> Option<f32> {\n    match file_name {\n"
-                .as_ref(),
-        )
-        .unwrap();
+        let mut marker_file = File::create(Path::new(&out_dir).join(OUTPUT_FILE_NAME)).unwrap();
+        let mut files = Vec::new();
 
         let building_for_wasm = std::env::var("CARGO_CFG_TARGET_ARCH") == Ok("wasm32".to_string());
 
         visit_dirs(&dir)
             .iter()
             .map(|path| (path, path.strip_prefix(&dir).unwrap()))
-            .for_each(|(fullpath, path)| {
+            .for_each(|(full_path, path)| {
                 let mut path = path.to_string_lossy().to_string();
                 if building_for_wasm {
                     // building for wasm. replace paths with forward slash in case we're building from windows
                     path = path.replace(std::path::MAIN_SEPARATOR, "/");
                 }
-                cargo_emit::rerun_if_changed!(fullpath.to_string_lossy());
-
-                if let Some(duration) = get_audio_duration(&fullpath) {
-                    file.write_all(
-                        format!(
-                            r#"        {:?} => Some({}),
-"#,
-                            path, duration
-                        )
-                        .as_ref(),
-                    )
-                    .unwrap();
-                } else {
-                    cargo_emit::warning!(
-                        "Could not get duration for audio file: {}",
-                        fullpath.to_string_lossy()
-                    );
+                cargo_emit::rerun_if_changed!(full_path.to_string_lossy());
+                if let Some(duration) = get_audio_duration(&full_path) {
+                    files.push(AudioFile { path, duration });
                 }
             });
 
-        file.write_all(format!("        not_found => {{\n            bevy::utils::tracing::warn!(\"Audio length not found for {{not_found}}\");\n            None\n        }}\n    }}\n}}\n").as_ref())
+        // Write the markers
+        marker_file
+            .write_all(
+                format!(
+                    "pub mod markers {{\n{}\n}}\n",
+                    files
+                        .iter()
+                        .map(|f| f.get_marker_struct())
+                        .collect::<String>()
+                )
+                .as_ref(),
+            )
+            .unwrap();
+
+        // Write the insert_audio_track trait for entity commands so we can do some jank component inserts
+        marker_file
+            .write_all(
+                format!(
+                    r#"
+pub mod ac_traits {{
+    pub trait InsertAudioTrack {{
+        fn insert_audio_track(&mut self, id: &str) -> &mut Self;
+    }}
+
+    impl<'a> InsertAudioTrack for bevy::ecs::system::EntityCommands<'a> {{
+        fn insert_audio_track(&mut self, id: &str) -> &mut bevy::ecs::system::EntityCommands<'a> {{
+            match id {{
+                {}
+                _ => self,
+            }}
+        }}
+    }}
+}}
+"#,
+                    files
+                        .iter()
+                        .map(|f| f.insert_audio_track_impl())
+                        .collect::<Vec<_>>()
+                        .join("\n                ")
+                )
+                .as_ref(),
+            )
+            .unwrap();
+
+        // Write the enum for the audio files
+        marker_file
+            .write_all(
+                format!(
+                    r#"
+pub mod audio_files {{
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+    pub enum AudioFiles {{
+        #[default]
+        Unknown,
+        {}
+    }}
+
+    impl ToString for AudioFiles {{
+        fn to_string(&self) -> String {{
+            match self {{
+                {}
+                _ => "Unknown",
+            }}
+            .to_string()
+        }}
+    }}
+
+    impl From<&String> for AudioFiles {{
+        fn from(file_name: &String) -> Self {{
+            match file_name {{
+                {}
+                _ => AudioFiles::Unknown,
+            }}
+        }}
+    }}
+
+    impl From<String> for AudioFiles {{
+        fn from(file_name: String) -> Self {{
+            Self::from(&file_name)
+        }}
+    }}
+
+
+    impl From<AudioFiles> for &str {{
+        fn from(file_name: AudioFiles) -> &str {{
+            match file_name {{
+                {}
+                _ => "Unknown",
+            }}
+        }}
+    }}
+
+    impl From<&bevy::core::Name> for AudioFiles {{
+        fn from(name: &bevy::core::Name) -> Self {{
+            Self::from(&name.to_string())
+        }}
+    }}
+}}
+"#,
+                    files
+                        .iter()
+                        .map(|f| f.enum_creator())
+                        .collect::<Vec<_>>()
+                        .join("\n        "),
+                    files
+                        .iter()
+                        .map(|f| f.get_enum_file_match())
+                        .collect::<Vec<_>>()
+                        .join("\n                "),
+                    files
+                        .iter()
+                        .map(|f| f.get_enum_match())
+                        .collect::<Vec<_>>()
+                        .join("\n                "),
+                    files
+                        .iter()
+                        .map(|f| f.get_enum_file_match())
+                        .collect::<Vec<_>>()
+                        .join("\n                ")
+                )
+                .as_ref(),
+            )
             .unwrap();
     } else if std::env::var("DOCS_RS").is_ok() {
-        let out_dir = env::var_os("OUT_DIR").unwrap();
-        let dest_path = Path::new(&out_dir).join("audio_lengths.rs");
+        //         let out_dir = env::var_os("OUT_DIR").unwrap();
+        //         let dest_path = Path::new(&out_dir).join("audio_lengths.rs");
 
-        let mut file = File::create(dest_path).unwrap();
-        file.write_all(
-            "/// Generated function that will return the length of the input audio file. It does not panic if a file is missing but will log a warning.
-fn include_all_assets(registry: impl EmbeddedRegistry){}"
-                .as_ref(),
-        )
-        .unwrap();
+        //         let mut file = File::create(dest_path).unwrap();
+        //         file.write_all(
+        //             "/// Generated function that will return the length of the input audio file. It does not panic if a file is missing but will log a warning.
+        // fn include_all_assets(registry: impl EmbeddedRegistry){}"
+        //                 .as_ref(),
+        //         )
+        // .unwrap();
     } else {
         cargo_emit::warning!(
             "Could not find asset folder, please specify its path with ${}",
             ASSET_PATH_VAR
         );
         panic!("No asset folder found");
+    }
+}
+
+struct AudioFile {
+    path: String,
+    duration: f32,
+}
+
+impl AudioFile {
+    // fn get_length_match(&self) -> String {
+    //     format!(
+    //         r#"        {:?} => Some(markers::{}::DURATION),"#,
+    //         self.path,
+    //         self.pascal_case()
+    //     )
+    // }
+
+    fn get_enum_match(&self) -> String {
+        let struct_name = self.pascal_case();
+        format!(
+            "markers::{}::FILE_NAME => AudioFiles::{},",
+            struct_name, struct_name
+        )
+    }
+
+    fn get_enum_file_match(&self) -> String {
+        let struct_name = self.pascal_case();
+        format!(
+            "AudioFiles::{} => markers::{}::FILE_NAME,",
+            struct_name, struct_name,
+        )
+    }
+
+    fn insert_audio_track_impl(&self) -> String {
+        format!(
+            r#"{:?} => self.insert(markers::{}::DURATION),"#,
+            self.path,
+            self.pascal_case()
+        )
+    }
+
+    fn enum_creator(&self) -> String {
+        format!("{},", self.pascal_case())
+    }
+
+    fn get_marker_struct(&self) -> String {
+        let struct_name = self.pascal_case();
+        format!(
+            r#"
+    /// Marker for the audio file: {:?}
+    #[derive(Debug, bevy::ecs::component::Component)]
+    pub struct {}(f32);
+
+    impl Default for {} {{
+        fn default() -> Self {{
+            Self(Self::DURATION)
+        }}
+    }}
+
+    impl From<f32> for {} {{
+        fn from(duration: f32) -> Self {{
+            Self(duration)
+        }}
+    }}
+
+    impl From<{}> for f32 {{
+        fn from(marker: {}) -> f32 {{
+            marker.0
+        }}
+    }}
+
+    impl {} {{
+        pub const DURATION: f32 = {};
+        pub const FILE_NAME: &'static str = {:?};
+
+        pub fn get(&self) -> f32 {{
+            self.0
+        }}
+        pub fn set(&mut self, duration: f32) {{
+            self.0 = duration;
+        }}
+        pub fn reset(&mut self) {{
+            self.0 = Self::DURATION;
+        }}
+    }}
+"#,
+            self.path,
+            struct_name,
+            struct_name,
+            struct_name,
+            struct_name,
+            struct_name,
+            struct_name,
+            self.duration,
+            self.path,
+        )
+    }
+
+    fn pascal_case(&self) -> String {
+        let mut parts: Vec<String> = self
+            .path
+            .split(|c: char| c.is_whitespace() || "-_.".contains(c))
+            .filter(|s| !s.is_empty())
+            .map(|s| {
+                let mut chars = s.chars();
+                match chars.next() {
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    None => String::new(),
+                }
+            })
+            .collect();
+
+        if let Some(extension) = parts.last_mut() {
+            *extension = extension.to_uppercase();
+        }
+
+        parts.concat()
     }
 }
 
