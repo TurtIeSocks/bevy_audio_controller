@@ -9,9 +9,6 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
-#[derive(Component, Default)]
-struct SfxChannel;
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
@@ -20,7 +17,6 @@ fn main() {
         }))
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
-        .register_audio_channel::<SfxChannel>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,

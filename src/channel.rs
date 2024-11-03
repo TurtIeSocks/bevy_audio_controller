@@ -3,7 +3,6 @@ use std::ops::Deref;
 use bevy::{
     app::{PostUpdate, Update},
     audio::{AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
-    core::Name,
     ecs::{
         component::Component,
         entity::Entity,
@@ -16,7 +15,6 @@ use bevy::{
         system::{Commands, Query, Res, ResMut},
     },
     hierarchy::BuildChildren,
-    log::info,
     prelude::{DespawnRecursiveExt, RemovedComponents, Without},
     utils::hashbrown::HashSet,
 };
@@ -123,10 +121,7 @@ fn ecs_system<Channel: Component + Default>(
         (Added<Channel>, Without<AudioSink>),
     >,
     mut ew: EventWriter<PlayEvent<Channel>>,
-    // channel_query: Query<(&Name, &AudioSink), With<Channel>>,
 ) {
-    // info!("Channel query length: {}", channel_query.iter().count());
-
     let mut events = Vec::new();
     for (entity, audio_file, settings, mode) in query.iter() {
         if mode == &DelayMode::Immediate {
@@ -185,7 +180,7 @@ fn play_event_reader<Channel: Component + Default>(
             },
         )
         .collect::<HashSet<&AudioFiles>>();
-    // info!("Playing: {:?}", is_playing);
+
     for event in events.read() {
         let settings = if let Some(event_settings) = event.settings {
             event_settings

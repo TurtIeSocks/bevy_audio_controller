@@ -70,3 +70,8 @@ required-features = ["ogg"]
 name = "event_options"
 path = "examples/event_options.rs"
 required-features = ["ogg"]
+
+[[example]]
+name = "querying"
+path = "examples/querying.rs"
+required-features = ["ogg"]
