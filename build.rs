@@ -156,8 +156,6 @@ pub mod ac_traits {{
                 format!(
                     r#"
 pub mod audio_files {{
-    use super::markers;
-
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum AudioFiles {{
         #[default]
@@ -210,6 +208,24 @@ pub mod audio_files {{
             Self::from(&name.to_string())
         }}
     }}
+
+    impl AudioFiles {{
+        {}
+
+        pub fn get_duration(&self) -> f32 {{
+            match self {{
+                {}
+                Self::Unknown => 0.0,
+            }}
+        }}
+
+        pub fn get_file_name(&self) -> &'static str {{
+            match self {{
+                {}
+                Self::Unknown => "",
+            }}
+        }}
+    }}
 }}
 "#,
                     files
@@ -231,7 +247,22 @@ pub mod audio_files {{
                         .iter()
                         .map(|f| f.get_enum_file_match())
                         .collect::<Vec<_>>()
-                        .join("\n                ")
+                        .join("\n                "),
+                    files
+                        .iter()
+                        .map(|f| format!("{}{}", f.duration_const(), f.file_name_const()))
+                        .collect::<Vec<_>>()
+                        .join("\n                "),
+                    files
+                        .iter()
+                        .map(|f| f.get_duration())
+                        .collect::<Vec<_>>()
+                        .join("\n                "),
+                    files
+                        .iter()
+                        .map(|f| f.get_file_name())
+                        .collect::<Vec<_>>()
+                        .join("\n                "),
                 )
                 .as_ref(),
             )
@@ -304,16 +335,17 @@ impl AudioFile {
     fn get_enum_match(&self) -> String {
         let struct_name = self.pascal_case();
         format!(
-            "markers::{}::FILE_NAME => AudioFiles::{},",
-            struct_name, struct_name
+            "Self::{}_FILE_NAME => AudioFiles::{},",
+            self.snake_case().to_uppercase(),
+            struct_name
         )
     }
 
     fn get_enum_file_match(&self) -> String {
-        let struct_name = self.pascal_case();
         format!(
-            "AudioFiles::{} => markers::{}::FILE_NAME,",
-            struct_name, struct_name,
+            "AudioFiles::{} => AudioFiles::{}_FILE_NAME,",
+            self.pascal_case(),
+            self.snake_case().to_uppercase(),
         )
     }
 
@@ -361,56 +393,51 @@ impl AudioFile {
         )
     }
 
+    fn duration_const(&self) -> String {
+        format!(
+            "    pub const {}_DURATION: f32 = {};\n",
+            self.snake_case().to_uppercase(),
+            self.duration
+        )
+    }
+
+    fn file_name_const(&self) -> String {
+        format!(
+            "    pub const {}_FILE_NAME: &'static str = {:?};\n",
+            self.snake_case().to_uppercase(),
+            self.path
+        )
+    }
+
+    fn get_duration(&self) -> String {
+        format!(
+            "        Self::{} =>  Self::{}_DURATION,",
+            self.pascal_case(),
+            self.snake_case().to_uppercase(),
+        )
+    }
+
+    fn get_file_name(&self) -> String {
+        format!(
+            "        Self::{} =>  Self::{}_FILE_NAME,",
+            self.pascal_case(),
+            self.snake_case().to_uppercase(),
+        )
+    }
+
     fn get_marker_struct(&self) -> String {
         let struct_name = self.pascal_case();
         format!(
             r#"
     /// Marker for the audio file: {:?}
-    #[derive(Debug, bevy::ecs::component::Component)]
-    pub struct {}(f32);
-
-    impl Default for {} {{
-        fn default() -> Self {{
-            Self(Self::DURATION)
-        }}
-    }}
-
-    impl From<f32> for {} {{
-        fn from(duration: f32) -> Self {{
-            Self(duration)
-        }}
-    }}
-
-    impl From<{}> for f32 {{
-        fn from(marker: {}) -> f32 {{
-            marker.0
-        }}
-    }}
-
-    impl {} {{
-        pub const DURATION: f32 = {};
-        pub const FILE_NAME: &'static str = {:?};
-
-        pub fn get(&self) -> f32 {{
-            self.0
-        }}
-        pub fn set(&mut self, duration: f32) {{
-            self.0 = duration;
-        }}
-        pub fn reset(&mut self) {{
-            self.0 = Self::DURATION;
-        }}
-    }}
+    /// 
+    /// This is not meant to be inserted or spawned directly outside of the plugin internals
+    /// 
+    /// Only use them for querying
+    #[derive(Debug, bevy::ecs::component::Component, Default)]
+    pub struct {};
 "#,
-            self.path,
-            struct_name,
-            struct_name,
-            struct_name,
-            struct_name,
-            struct_name,
-            struct_name,
-            self.duration,
-            self.path,
+            self.path, struct_name,
         )
     }
 
