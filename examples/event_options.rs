@@ -5,7 +5,7 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, AudioChannel)]
 struct SfxChannel;
 
 #[derive(Component)]
@@ -59,13 +59,13 @@ fn play_sfx(
     let parent_entity = parent_query.single();
     let player_entity = player_query.single();
     ew.send(
-        PlayEvent::<SfxChannel>::from(AudioFiles::FireOGG)
+        SfxChannel::new_play_event(AudioFiles::FireOGG)
             .with_settings(PlaybackSettings::DESPAWN)
             .with_entity(parent_entity)
             .as_child(),
     );
     ew.send(
-        PlayEvent::<SfxChannel>::new("spray.ogg".into())
+        SfxChannel::new_play_event("spray.ogg".into())
             .with_settings(PlaybackSettings::REMOVE)
             .with_entity(player_entity),
     );
@@ -73,7 +73,7 @@ fn play_sfx(
 
 fn force_play(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
     ew.send(
-        PlayEvent::<SfxChannel>::new(AudioFiles::FireOGG)
+        SfxChannel::new_play_event(AudioFiles::FireOGG)
             .with_delay_mode(DelayMode::Immediate)
             .with_settings(PlaybackSettings::DESPAWN),
     );

@@ -5,6 +5,8 @@ use bevy::{
     ecs::{component::Component, entity::Entity, event::Event},
 };
 
+pub use macros::AudioChannel;
+
 use crate::{audio_files::AudioFiles, plugin::DelayMode};
 
 #[derive(Event)]

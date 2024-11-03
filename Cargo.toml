@@ -11,13 +11,15 @@ keywords = ["bevy", "gamedev", "audio", "music"]
 categories = ["game-development", "multimedia::audio"]
 readme = "./README.md"
 
-[lib]
+[workspace]
+members = ["macros"]
 
 [dependencies]
 bevy = { version = "0.14", default-features = false, features = [
   "bevy_audio",
   "bevy_asset",
 ] }
+macros = { path = "./macros" }
 
 [build-dependencies]
 symphonia = { version = "0.5", default-features = false }
@@ -74,4 +76,9 @@ required-features = ["ogg"]
 [[example]]
 name = "querying"
 path = "examples/querying.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "ecs"
+path = "examples/ecs.rs"
 required-features = ["ogg"]
