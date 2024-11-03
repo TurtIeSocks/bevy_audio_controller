@@ -2,12 +2,12 @@ use std::ops::Deref;
 
 use bevy::{
     app::{PostUpdate, Update},
-    audio::{AudioSink, AudioSinkPlayback, PlaybackSettings},
+    audio::{AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
     core::Name,
     ecs::{
         component::Component,
         entity::Entity,
-        event::EventReader,
+        event::{EventReader, EventWriter},
         query::{Added, With},
         schedule::{
             common_conditions::{on_event, resource_changed},
@@ -16,17 +16,18 @@ use bevy::{
         system::{Commands, Query, Res, ResMut},
     },
     hierarchy::BuildChildren,
-    // log::info,
+    log::info,
+    prelude::{DespawnRecursiveExt, RemovedComponents, Without},
     utils::hashbrown::HashSet,
 };
 
 use crate::{
     // bounds::Bounds,
     ac_assets::AssetLoader,
-    ac_traits::InsertAudioTrack,
+    ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
     events::{PlayEvent, TrackEvent, VolumeEvent},
-    plugin::{GlobalAudioChannel, HasChannel},
+    plugin::{ACPlayMode, GlobalAudioChannel, HasChannel},
     resources::{ChannelSettings, TrackSettings},
 };
 
@@ -44,7 +45,7 @@ impl ChannelRegistration for bevy::app::App {
             .add_systems(
                 Update,
                 (
-                    replace_file_enum::<Channel>,
+                    ecs_system::<Channel>,
                     update_volume_on_insert::<Channel>,
                     volume_event_reader::<Channel>.run_if(on_event::<VolumeEvent<Channel>>()),
                     track_event_reader::<Channel>.run_if(on_event::<TrackEvent<Channel>>()),
@@ -54,7 +55,10 @@ impl ChannelRegistration for bevy::app::App {
             )
             .add_systems(
                 PostUpdate,
-                play_event_reader::<Channel>.run_if(on_event::<PlayEvent<Channel>>()),
+                (
+                    remove_audio_components::<Channel>,
+                    play_event_reader::<Channel>.run_if(on_event::<PlayEvent<Channel>>()),
+                ),
             )
     }
 }
@@ -104,25 +108,62 @@ fn track_event_reader<Channel: Component + Default>(
     }
 }
 
-fn replace_file_enum<Channel: Component + Default>(
+fn ecs_system<Channel: Component + Default>(
     mut commands: Commands,
     track_settings: Res<TrackSettings<Channel>>,
     asset_loader: Res<AssetLoader>,
-    query: Query<(Entity, &AudioFiles, Option<&PlaybackSettings>), Added<Channel>>,
+    query: Query<
+        (
+            Entity,
+            &AudioFiles,
+            Option<&PlaybackSettings>,
+            Option<&ACPlayMode>,
+        ),
+        (Added<Channel>, Without<AudioSink>),
+    >,
+    mut ew: EventWriter<PlayEvent<Channel>>,
+    // channel_query: Query<(&Name, &AudioSink), With<Channel>>,
 ) {
-    for (entity, audio_file, settings) in query.iter() {
-        commands
-            .entity(entity)
-            .remove::<AudioFiles>()
-            .insert_audio_track(audio_file)
-            .insert(HasChannel);
-        if let Some(handler) = asset_loader.get(audio_file) {
-            commands.entity(entity).insert(handler);
-        }
-        if settings.is_none() {
+    // info!("Channel query length: {}", channel_query.iter().count());
+
+    let mut events = Vec::new();
+    for (entity, audio_file, settings, mode) in query.iter() {
+        if mode.map_or(false, |m| m == &ACPlayMode::Always) {
             commands
                 .entity(entity)
-                .insert(track_settings.get_track_setting(audio_file));
+                .insert_audio_track(audio_file)
+                .insert(HasChannel);
+            if let Some(handler) = asset_loader.get(audio_file) {
+                commands.entity(entity).insert(handler);
+            }
+            if settings.is_none() {
+                commands
+                    .entity(entity)
+                    .insert(track_settings.get_track_setting(audio_file));
+            }
+        } else {
+            let event = PlayEvent::<Channel>::new(*audio_file).with_entity(entity);
+            if let Some(settings) = settings {
+                events.push(event.with_settings(settings.clone()));
+            } else {
+                events.push(event);
+            }
+        }
+    }
+    ew.send_batch(events);
+}
+
+fn remove_audio_components<Channel: Component + Default>(
+    mut commands: Commands,
+    mut removed: RemovedComponents<AudioSink>,
+    channel_query: Query<&AudioFiles, With<Channel>>,
+) {
+    for entity in removed.read() {
+        if let Ok(track) = channel_query.get(entity) {
+            commands
+                .entity(entity)
+                .remove_audio_track(track)
+                .remove::<(Channel, AudioFiles)>();
         }
     }
 }
@@ -131,29 +172,30 @@ fn play_event_reader<Channel: Component + Default>(
     mut commands: Commands,
     asset_loader: Res<AssetLoader>,
     mut events: EventReader<PlayEvent<Channel>>,
-    channel_query: Query<(&Name, &AudioSink), With<Channel>>,
+    channel_query: Query<(&AudioFiles, &AudioSink), With<Channel>>,
     track_settings: Res<TrackSettings<Channel>>,
 ) {
     let mut is_playing = channel_query
         .iter()
-        .filter_map(|(name, sink)| {
-            if sink.is_paused() {
-                None
-            } else {
-                Some(name.into())
-            }
-        })
-        .collect::<HashSet<AudioFiles>>();
-
+        .filter_map(
+            |(file, sink)| {
+                if sink.is_paused() {
+                    None
+                } else {
+                    Some(file)
+                }
+            },
+        )
+        .collect::<HashSet<&AudioFiles>>();
+    // info!("Playing: {:?}", is_playing);
     for event in events.read() {
+        let settings = if let Some(event_settings) = event.settings {
+            event_settings
+        } else {
+            track_settings.get_track_setting(&event.id)
+        };
         if event.force || !is_playing.contains(&event.id) {
-            let settings = if let Some(event_settings) = event.settings {
-                event_settings
-            } else {
-                track_settings.get_track_setting(&event.id)
-            };
-            is_playing.insert(event.id);
-            let id = event.id.to_string();
+            is_playing.insert(&event.id);
             if let Some(handler) = asset_loader.get(&event.id) {
                 let bundle = (handler, settings, Channel::default());
                 let audio_entity = if let Some(dest_entity) = event.entity {
@@ -161,14 +203,29 @@ fn play_event_reader<Channel: Component + Default>(
                 } else {
                     let child = commands
                         .spawn(bundle)
-                        .insert((Name::new(id), HasChannel))
+                        .insert((Name::new(event.id.to_string()), HasChannel))
                         .id();
                     if let Some(parent_entity) = event.parent {
                         commands.entity(parent_entity).add_child(child);
                     }
                     child
                 };
-                commands.entity(audio_entity).insert_audio_track(&event.id);
+                commands
+                    .entity(audio_entity)
+                    .insert_audio_track(&event.id)
+                    .insert(event.id);
+            }
+        } else if let Some(entity) = event.entity {
+            match settings.mode {
+                PlaybackMode::Despawn => {
+                    commands.entity(entity).despawn_recursive();
+                }
+                PlaybackMode::Remove => {
+                    commands
+                        .entity(entity)
+                        .remove::<(Channel, PlaybackSettings, AudioFiles)>();
+                }
+                _ => {}
             }
         }
     }

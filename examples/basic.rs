@@ -7,6 +7,8 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
+mod helpers;
+
 #[derive(Component, Default)]
 struct SfxChannel;
 
@@ -35,39 +37,22 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut ew: EventWriter<SfxTrackEvent>) {
+fn setup(mut commands: Commands, mut sfx_track_ew: EventWriter<SfxTrackEvent>) {
     commands.spawn(Camera2dBundle::default());
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                display: Display::Flex,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..Default::default()
-            },
-            ..Default::default()
-        })
+        .spawn(helpers::get_container())
         .with_children(|parent| {
-            parent.spawn(TextBundle {
-                text: Text::from_section(
-                    "Press SPACE to toggle between\nplugin and non-plugin audio",
-                    TextStyle {
-                        font_size: 40.0,
-                        ..Default::default()
-                    },
-                )
-                .with_justify(JustifyText::Center),
-                ..Default::default()
-            });
+            parent.spawn(helpers::get_text(
+                "Press SPACE to toggle between\nplugin and non-plugin audio",
+            ));
         });
 
-    ew.send(SfxTrackEvent::new(PlaybackSettings::DESPAWN).with_track(AudioFiles::FireOGG));
+    sfx_track_ew
+        .send(SfxTrackEvent::new(PlaybackSettings::DESPAWN).with_track(AudioFiles::FireOGG));
 }
 
-fn play_with_plugin(mut ew: EventWriter<SfxPlayEvent>) {
-    ew.send(SfxPlayEvent::new(AudioFiles::FireOGG));
+fn play_with_plugin(mut sfx_play_ew: EventWriter<SfxPlayEvent>) {
+    sfx_play_ew.send(SfxPlayEvent::new(AudioFiles::FireOGG));
     // You can send events using the enum values or a string
     // ew.send(SfxPlayEvent::new("fire.ogg".into()));
 }

@@ -3,6 +3,8 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
+mod helpers;
+
 #[derive(Component, Default)]
 struct SfxChannel;
 
@@ -36,30 +38,13 @@ fn setup(mut commands: Commands) {
     commands.spawn((Name::new("SFX Container"), SfxParent));
     commands.spawn((Name::new("Player"), Player));
     commands.spawn(Camera2dBundle::default());
+
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                display: Display::Flex,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..Default::default()
-            },
-            ..Default::default()
-        })
+        .spawn(helpers::get_container())
         .with_children(|parent| {
-            parent.spawn(TextBundle {
-                text: Text::from_section(
-                    "Press SPACE to force a sound effect to override the cache",
-                    TextStyle {
-                        font_size: 40.0,
-                        ..Default::default()
-                    },
-                )
-                .with_justify(JustifyText::Center),
-                ..Default::default()
-            });
+            parent.spawn(helpers::get_text(
+                "Press SPACE to force a sound effect to override the cache",
+            ));
         });
 }
 

@@ -40,6 +40,13 @@ pub struct GlobalAudioChannel;
 #[derive(Component)]
 pub(super) struct HasChannel;
 
+#[derive(Component, Default, PartialEq, Eq, Hash)]
+pub enum ACPlayMode {
+    #[default]
+    Standard,
+    Always,
+}
+
 fn assign_rogue_sink_to_global(
     mut commands: Commands,
     query: Query<(Entity, Option<&HasChannel>), Added<AudioSink>>,

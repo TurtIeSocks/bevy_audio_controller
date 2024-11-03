@@ -114,12 +114,20 @@ fn main() {
 pub mod ac_traits {{
     use super::{{markers::*, audio_files::*}};
 
-    pub trait InsertAudioTrack {{
+    pub trait CommandAudioTracks {{
         fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
+        fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
     }}
 
-    impl<'a> InsertAudioTrack for bevy::ecs::system::EntityCommands<'a> {{
+    impl<'a> CommandAudioTracks for bevy::ecs::system::EntityCommands<'a> {{
         fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
+            match id {{
+                {}
+                _ => self,
+            }}
+        }}
+
+        fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
             match id {{
                 {}
                 _ => self,
@@ -131,6 +139,10 @@ pub mod ac_traits {{
                     files
                         .iter()
                         .map(|f| f.insert_audio_track_impl())
+                        .collect::<Vec<_>>()
+                        .join("\n                "),  files
+                        .iter()
+                        .map(|f| f.remove_audio_track_impl())
                         .collect::<Vec<_>>()
                         .join("\n                ")
                 )
@@ -309,6 +321,14 @@ impl AudioFile {
         let struct_name = self.pascal_case();
         format!(
             r#"AudioFiles::{} => self.insert({}::default()),"#,
+            struct_name, struct_name
+        )
+    }
+
+    fn remove_audio_track_impl(&self) -> String {
+        let struct_name = self.pascal_case();
+        format!(
+            r#"AudioFiles::{} => self.remove::<{}>(),"#,
             struct_name, struct_name
         )
     }
