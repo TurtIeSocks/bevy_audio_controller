@@ -65,3 +65,8 @@ required-features = ["ogg"]
 name = "multiple"
 path = "examples/multiple.rs"
 required-features = ["ogg"]
+
+[[example]]
+name = "event_options"
+path = "examples/event_options.rs"
+required-features = ["ogg"]
