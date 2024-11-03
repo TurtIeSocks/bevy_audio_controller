@@ -11,6 +11,7 @@ use super::audio_files::AudioFiles;
 pub struct PlayEvent<T: Component + Default> {
     pub(super) id: AudioFiles,
     pub(super) parent: Option<Entity>,
+    pub(super) entity: Option<Entity>,
     pub(super) settings: Option<PlaybackSettings>,
     pub(super) force: bool,
     _marker: PhantomData<T>,
@@ -21,6 +22,7 @@ impl<T: Component + Default> PlayEvent<T> {
         Self {
             id,
             parent: None,
+            entity: None,
             settings: None,
             force: false,
             _marker: PhantomData::<T>,
@@ -30,6 +32,13 @@ impl<T: Component + Default> PlayEvent<T> {
     pub fn with_parent(self, entity: Entity) -> Self {
         Self {
             parent: Some(entity),
+            ..self
+        }
+    }
+
+    pub fn with_entity(self, entity: Entity) -> Self {
+        Self {
+            entity: Some(entity),
             ..self
         }
     }

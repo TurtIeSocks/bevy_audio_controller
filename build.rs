@@ -146,7 +146,7 @@ pub mod ac_traits {{
 pub mod audio_files {{
     use super::markers;
 
-    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+    #[derive(Debug, Default, Clone, bevy::ecs::component::Component, Copy, PartialEq, Eq, Hash)]
     pub enum AudioFiles {{
         #[default]
         Unknown,

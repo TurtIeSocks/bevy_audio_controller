@@ -11,6 +11,8 @@ use bevy::{
     },
 };
 
+use crate::prelude::AudioFiles;
+
 use super::{
     ac_assets::{load_assets, AssetLoader},
     channel::ChannelRegistration,
@@ -23,7 +25,10 @@ impl Plugin for AudioControllerPlugin {
         app.init_resource::<AssetLoader>()
             .register_audio_channel::<GlobalAudioChannel>()
             .add_systems(Startup, load_assets)
-            .add_systems(Update, assign_to_global);
+            .add_systems(
+                Update,
+                (assign_rogue_sink_to_global, assign_rogue_audio_to_global),
+            );
     }
 }
 
@@ -33,15 +38,28 @@ impl Plugin for AudioControllerPlugin {
 pub struct GlobalAudioChannel;
 
 #[derive(Component)]
-pub(super) struct NotGlobal;
+pub(super) struct HasChannel;
 
-fn assign_to_global(
+fn assign_rogue_sink_to_global(
     mut commands: Commands,
-    query: Query<(Entity, Option<&NotGlobal>), Added<AudioSink>>,
+    query: Query<(Entity, Option<&HasChannel>), Added<AudioSink>>,
+) {
+    for (entity, has_channel) in query.iter() {
+        if has_channel.is_some() {
+            commands.entity(entity).remove::<HasChannel>();
+        } else {
+            commands.entity(entity).insert(GlobalAudioChannel);
+        }
+    }
+}
+
+fn assign_rogue_audio_to_global(
+    mut commands: Commands,
+    query: Query<(Entity, Option<&HasChannel>), Added<AudioFiles>>,
 ) {
     for (entity, not_global) in query.iter() {
-        if let Some(_) = not_global {
-            commands.entity(entity).remove::<NotGlobal>();
+        if not_global.is_some() {
+            commands.entity(entity).remove::<HasChannel>();
         } else {
             commands.entity(entity).insert(GlobalAudioChannel);
         }
