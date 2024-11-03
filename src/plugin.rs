@@ -12,8 +12,8 @@ use bevy::{
 };
 
 use super::{
+    ac_assets::{load_assets, AssetLoader},
     channel::ChannelRegistration,
-    handler_plugin::{load_assets, AssetLoader},
 };
 
 pub struct AudioControllerPlugin;

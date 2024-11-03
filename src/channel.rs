@@ -19,11 +19,11 @@ use bevy::{
 };
 
 use crate::{
+    // bounds::Bounds,
+    ac_assets::AssetLoader,
     ac_traits::InsertAudioTrack,
     audio_files::AudioFiles,
     events::{PlayEvent, TrackEvent, VolumeEvent},
-    // bounds::Bounds,
-    handler_plugin::AssetLoader,
     plugin::{GlobalAudioChannel, NotGlobal},
     resources::{ChannelSettings, TrackSettings},
 };

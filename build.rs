@@ -229,7 +229,7 @@ pub mod audio_files {{
             .write_all(
                 format!(
                     r#"
-mod handler_plugin {{
+mod ac_assets {{
     use super::audio_files::AudioFiles;
     
     pub(super) fn load_assets(asset_server: bevy::ecs::system::Res<bevy::asset::AssetServer>, mut internal_loader: bevy::ecs::system::ResMut<AssetLoader>) {{
