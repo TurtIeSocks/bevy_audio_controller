@@ -24,7 +24,7 @@ use crate::{
     events::{PlayEvent, TrackEvent, VolumeEvent},
     // bounds::Bounds,
     handler_plugin::AssetLoader,
-    plugin::GlobalAudioChannel,
+    plugin::{GlobalAudioChannel, NotGlobal},
     resources::{ChannelSettings, TrackSettings},
 };
 
@@ -130,7 +130,7 @@ fn play_event_reader<Channel: Component + Default>(
             let id = event.id.to_string();
             if let Some(handler) = asset_loader.get(&event.id) {
                 let child = commands
-                    .spawn((handler, settings, Channel::default()))
+                    .spawn((handler, settings, Channel::default(), NotGlobal))
                     .insert_audio_track(&event.id)
                     .insert(Name::new(id))
                     .id();
