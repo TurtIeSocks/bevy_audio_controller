@@ -113,9 +113,6 @@ fn track_event_reader<Channel: Component + Default>(
 }
 
 fn ecs_system<Channel: Component + Default>(
-    mut commands: Commands,
-    track_settings: Res<TrackSettings<Channel>>,
-    asset_loader: Res<AssetLoader>,
     query: Query<
         (Entity, &AudioFiles, Option<&PlaybackSettings>, &DelayMode),
         (Added<Channel>, Without<AudioSink>),
@@ -124,23 +121,13 @@ fn ecs_system<Channel: Component + Default>(
 ) {
     let mut events = Vec::new();
     for (entity, audio_file, settings, mode) in query.iter() {
-        if mode == &DelayMode::Immediate {
-            commands.entity(entity).insert_audio_track(audio_file);
-            if let Some(handler) = asset_loader.get(audio_file) {
-                commands.entity(entity).insert(handler);
-            }
-            if settings.is_none() {
-                commands
-                    .entity(entity)
-                    .insert(track_settings.get_track_setting(audio_file));
-            }
+        let event = PlayEvent::<Channel>::new(*audio_file)
+            .with_entity(entity)
+            .with_delay_mode(mode.clone());
+        if let Some(settings) = settings {
+            events.push(event.with_settings(settings.clone()));
         } else {
-            let event = PlayEvent::<Channel>::new(*audio_file).with_entity(entity);
-            if let Some(settings) = settings {
-                events.push(event.with_settings(settings.clone()));
-            } else {
-                events.push(event);
-            }
+            events.push(event);
         }
     }
     ew.send_batch(events);
