@@ -27,3 +27,9 @@ pub fn get_container() -> NodeBundle {
         ..Default::default()
     }
 }
+
+pub fn despawn_on_change(mut commands: Commands, query: Query<Entity, With<AudioSink>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}

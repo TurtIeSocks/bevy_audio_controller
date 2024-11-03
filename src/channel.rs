@@ -27,7 +27,7 @@ use crate::{
     ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
     events::{PlayEvent, TrackEvent, VolumeEvent},
-    plugin::{ACPlayMode, GlobalAudioChannel, HasChannel},
+    plugin::{DelayMode, GlobalAudioChannel, HasChannel},
     resources::{ChannelSettings, TrackSettings},
 };
 
@@ -37,6 +37,12 @@ pub trait ChannelRegistration {
 
 impl ChannelRegistration for bevy::app::App {
     fn register_audio_channel<Channel: Component + Default>(&mut self) -> &mut Self {
+        self.world_mut()
+            .register_component_hooks::<Channel>()
+            .on_add(|mut world, entity, _| {
+                world.commands().entity(entity).insert(HasChannel);
+            });
+
         self.add_event::<PlayEvent<Channel>>()
             .add_event::<VolumeEvent<Channel>>()
             .add_event::<TrackEvent<Channel>>()
@@ -113,12 +119,7 @@ fn ecs_system<Channel: Component + Default>(
     track_settings: Res<TrackSettings<Channel>>,
     asset_loader: Res<AssetLoader>,
     query: Query<
-        (
-            Entity,
-            &AudioFiles,
-            Option<&PlaybackSettings>,
-            Option<&ACPlayMode>,
-        ),
+        (Entity, &AudioFiles, Option<&PlaybackSettings>, &DelayMode),
         (Added<Channel>, Without<AudioSink>),
     >,
     mut ew: EventWriter<PlayEvent<Channel>>,
@@ -128,11 +129,8 @@ fn ecs_system<Channel: Component + Default>(
 
     let mut events = Vec::new();
     for (entity, audio_file, settings, mode) in query.iter() {
-        if mode.map_or(false, |m| m == &ACPlayMode::Always) {
-            commands
-                .entity(entity)
-                .insert_audio_track(audio_file)
-                .insert(HasChannel);
+        if mode == &DelayMode::Immediate {
+            commands.entity(entity).insert_audio_track(audio_file);
             if let Some(handler) = asset_loader.get(audio_file) {
                 commands.entity(entity).insert(handler);
             }
@@ -194,30 +192,32 @@ fn play_event_reader<Channel: Component + Default>(
         } else {
             track_settings.get_track_setting(&event.id)
         };
-        if event.force || !is_playing.contains(&event.id) {
+        let delay_mode = if let Some(mode) = event.delay_mode {
+            mode
+        } else {
+            DelayMode::Wait
+        };
+        if delay_mode == DelayMode::Immediate || !is_playing.contains(&event.id) {
             is_playing.insert(&event.id);
             if let Some(handler) = asset_loader.get(&event.id) {
-                let bundle = (handler, settings, Channel::default());
-                let audio_entity = if let Some(dest_entity) = event.entity {
-                    commands.entity(dest_entity).insert(bundle).id()
-                } else {
-                    let child = commands
-                        .spawn(bundle)
-                        .insert((Name::new(event.id.to_string()), HasChannel))
-                        .id();
-                    if let Some(parent_entity) = event.parent {
-                        commands.entity(parent_entity).add_child(child);
+                let bundle = (handler, settings, event.id, Channel::default());
+                if let Some(dest_entity) = event.entity {
+                    if event.child {
+                        let child = commands.spawn(bundle).id();
+                        commands.entity(dest_entity).add_child(child);
+                    } else {
+                        commands.entity(dest_entity).insert(bundle);
                     }
-                    child
-                };
-                commands
-                    .entity(audio_entity)
-                    .insert_audio_track(&event.id)
-                    .insert(event.id);
+                } else {
+                    commands.spawn(bundle);
+                }
             }
         } else if let Some(entity) = event.entity {
             match settings.mode {
                 PlaybackMode::Despawn => {
+                    if event.child {
+                        return;
+                    }
                     commands.entity(entity).despawn_recursive();
                 }
                 PlaybackMode::Remove => {

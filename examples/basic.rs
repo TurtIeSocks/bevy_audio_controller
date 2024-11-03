@@ -31,7 +31,7 @@ fn main() {
             (
                 play_with_plugin.run_if(input_toggle_active(true, KeyCode::Space)),
                 play_without_plugin.run_if(input_toggle_active(false, KeyCode::Space)),
-                despawn_on_change.run_if(input_just_pressed(KeyCode::Space)),
+                helpers::despawn_on_change.run_if(input_just_pressed(KeyCode::Space)),
             ),
         )
         .run();
@@ -66,11 +66,4 @@ fn play_without_plugin(mut commands: Commands, asset_server: Res<AssetServer>) {
         source: asset_server.load("fire.ogg"),
         ..Default::default()
     });
-}
-
-/// Only relevant to this example to clean up the audio from the previous state
-fn despawn_on_change(mut commands: Commands, query: Query<Entity, With<AudioSink>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
 }

@@ -5,15 +5,15 @@ use bevy::{
     ecs::{component::Component, entity::Entity, event::Event},
 };
 
-use super::audio_files::AudioFiles;
+use crate::{audio_files::AudioFiles, plugin::DelayMode};
 
 #[derive(Event)]
 pub struct PlayEvent<T: Component + Default> {
     pub(super) id: AudioFiles,
-    pub(super) parent: Option<Entity>,
     pub(super) entity: Option<Entity>,
+    pub(super) child: bool,
     pub(super) settings: Option<PlaybackSettings>,
-    pub(super) force: bool,
+    pub(super) delay_mode: Option<DelayMode>,
     _marker: PhantomData<T>,
 }
 
@@ -21,18 +21,11 @@ impl<T: Component + Default> PlayEvent<T> {
     pub fn new(id: AudioFiles) -> Self {
         Self {
             id,
-            parent: None,
             entity: None,
             settings: None,
-            force: false,
+            delay_mode: None,
+            child: false,
             _marker: PhantomData::<T>,
-        }
-    }
-
-    pub fn with_parent(self, entity: Entity) -> Self {
-        Self {
-            parent: Some(entity),
-            ..self
         }
     }
 
@@ -43,14 +36,21 @@ impl<T: Component + Default> PlayEvent<T> {
         }
     }
 
-    pub fn with_force(mut self) -> Self {
-        self.force = true;
-        self
-    }
-
     pub fn with_settings(mut self, settings: PlaybackSettings) -> Self {
         self.settings = Some(settings);
         self
+    }
+
+    pub fn with_delay_mode(mut self, delay_mode: DelayMode) -> Self {
+        self.delay_mode = Some(delay_mode);
+        self
+    }
+
+    pub fn as_child(self) -> Self {
+        Self {
+            child: true,
+            ..self
+        }
     }
 }
 

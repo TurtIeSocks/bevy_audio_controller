@@ -61,7 +61,8 @@ fn play_sfx(
     ew.send(
         PlayEvent::<SfxChannel>::from(AudioFiles::FireOGG)
             .with_settings(PlaybackSettings::DESPAWN)
-            .with_parent(parent_entity),
+            .with_entity(parent_entity)
+            .as_child(),
     );
     ew.send(
         PlayEvent::<SfxChannel>::new("spray.ogg".into())
@@ -73,7 +74,7 @@ fn play_sfx(
 fn force_play(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
     ew.send(
         PlayEvent::<SfxChannel>::new(AudioFiles::FireOGG)
-            .with_force()
+            .with_delay_mode(DelayMode::Immediate)
             .with_settings(PlaybackSettings::DESPAWN),
     );
 }

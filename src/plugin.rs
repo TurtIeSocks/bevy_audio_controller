@@ -40,11 +40,13 @@ pub struct GlobalAudioChannel;
 #[derive(Component)]
 pub(super) struct HasChannel;
 
-#[derive(Component, Default, PartialEq, Eq, Hash)]
-pub enum ACPlayMode {
+#[derive(Component, Default, PartialEq, Eq, Hash, Copy, Clone)]
+pub enum DelayMode {
     #[default]
-    Standard,
-    Always,
+    Wait,
+    Immediate,
+    Percent(i32),
+    Milliseconds(i32),
 }
 
 fn assign_rogue_sink_to_global(
