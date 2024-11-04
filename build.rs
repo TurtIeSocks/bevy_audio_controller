@@ -123,14 +123,14 @@ pub mod ac_traits {{
         fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
             match id {{
                 {}
-                _ => self,
+                AudioFiles::Unknown => self,
             }}
         }}
 
         fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
             match id {{
                 {}
-                _ => self,
+                AudioFiles::Unknown => self,
             }}
         }}
     }}
@@ -167,7 +167,7 @@ pub mod audio_files {{
         fn to_string(&self) -> String {{
             match self {{
                 {}
-                _ => "Unknown",
+                Self::Unknown => "Unknown",
             }}
             .to_string()
         }}
@@ -177,7 +177,10 @@ pub mod audio_files {{
         fn from(file_name: &str) -> Self {{
             match file_name {{
                 {}
-                _ => AudioFiles::Unknown,
+                unknown => {{
+                    bevy::log::warn!("Unknown audio file '{{}}' requested", unknown);
+                    AudioFiles::Unknown
+                }},
             }}
         }}
     }}
@@ -198,7 +201,10 @@ pub mod audio_files {{
         fn from(file_name: AudioFiles) -> &'static str {{
             match file_name {{
                 {}
-                _ => "Unknown",
+                unknown => {{
+                    bevy::log::warn!("Unknown audio file '{{:?}}' requested", unknown);
+                    "Unknown"
+                }}
             }}
         }}
     }}
@@ -215,14 +221,20 @@ pub mod audio_files {{
         pub fn get_duration(&self) -> f32 {{
             match self {{
                 {}
-                Self::Unknown => 0.0,
+                Self::Unknown => {{
+                    bevy::log::warn!("Unknown audio duration requested");
+                    0.0
+                }},
             }}
         }}
 
         pub fn get_file_name(&self) -> &'static str {{
             match self {{
                 {}
-                Self::Unknown => "",
+                Self::Unknown => {{
+                    bevy::log::warn!("Unknown audio file name requested");
+                    ""
+                }},
             }}
         }}
     }}
@@ -288,7 +300,7 @@ mod ac_assets {{
         pub(super) fn get(&self, id: &AudioFiles) -> Option<bevy::asset::Handle<bevy::audio::AudioSource>> {{
             match id {{
                 {}
-                _ => None,
+                AudioFiles::Unknown => None,
             }}
         }}
     }}
@@ -379,9 +391,9 @@ impl AudioFile {
 
     fn asset_loader(&self) -> String {
         format!(
-            r#"        internal_loader.{} = asset_server.load("{}");"#,
+            r#"        internal_loader.{} = asset_server.load(AudioFiles::{}.get_file_name());"#,
             self.snake_case(),
-            self.path
+            self.pascal_case()
         )
     }
 
@@ -444,7 +456,7 @@ impl AudioFile {
     fn pascal_case(&self) -> String {
         let mut parts: Vec<String> = self
             .path
-            .split(|c: char| c.is_whitespace() || "-_.".contains(c))
+            .split(|c: char| c.is_whitespace() || "-_.\\".contains(c))
             .filter(|s| !s.is_empty())
             .map(|s| {
                 let mut chars = s.chars();
