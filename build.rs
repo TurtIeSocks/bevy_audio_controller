@@ -111,10 +111,10 @@ fn main() {
             .write_all(
                 format!(
                     r#"
-pub mod ac_traits {{
+mod ac_traits {{
     use super::{{markers::*, audio_files::*}};
 
-    pub trait CommandAudioTracks {{
+    pub(crate) trait CommandAudioTracks {{
         fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
         fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
     }}
@@ -156,6 +156,12 @@ pub mod ac_traits {{
                 format!(
                     r#"
 pub mod audio_files {{
+    #[derive(Debug, Default)]
+    pub struct AudioFile {{
+        pub path: &'static str,
+        pub duration: f32,
+    }}
+
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum AudioFiles {{
         #[default]
@@ -175,7 +181,7 @@ pub mod audio_files {{
 
     impl From<&str> for AudioFiles {{
         fn from(file_name: &str) -> Self {{
-            match file_name {{
+            match file_name.replace('\\', "/").as_str() {{
                 {}
                 unknown => {{
                     bevy::log::warn!("Unknown audio file '{{}}' requested", unknown);
@@ -217,6 +223,16 @@ pub mod audio_files {{
 
     impl AudioFiles {{
         {}
+
+        pub fn get(&self) -> AudioFile {{
+            match self {{
+                {}
+                Self::Unknown => {{
+                    bevy::log::warn!("Unknown audio file requested");
+                    AudioFile::default()
+                }},
+            }}
+        }}
 
         pub fn get_duration(&self) -> f32 {{
             match self {{
@@ -262,7 +278,12 @@ pub mod audio_files {{
                         .join("\n                "),
                     files
                         .iter()
-                        .map(|f| format!("{}{}", f.duration_const(), f.file_name_const()))
+                        .map(|f| f.audio_file_struct())
+                        .collect::<Vec<_>>()
+                        .join("\n                "),
+                    files
+                        .iter()
+                        .map(|f| f.get())
                         .collect::<Vec<_>>()
                         .join("\n                "),
                     files
@@ -347,7 +368,7 @@ impl AudioFile {
     fn get_enum_match(&self) -> String {
         let struct_name = self.pascal_case();
         format!(
-            "Self::{}_FILE_NAME => AudioFiles::{},",
+            "path if path == Self::{}.path => AudioFiles::{},",
             self.snake_case().to_uppercase(),
             struct_name
         )
@@ -355,7 +376,7 @@ impl AudioFile {
 
     fn get_enum_file_match(&self) -> String {
         format!(
-            "AudioFiles::{} => AudioFiles::{}_FILE_NAME,",
+            "AudioFiles::{} => AudioFiles::{}.path,",
             self.pascal_case(),
             self.snake_case().to_uppercase(),
         )
@@ -405,25 +426,17 @@ impl AudioFile {
         )
     }
 
-    fn duration_const(&self) -> String {
+    fn get(&self) -> String {
         format!(
-            "    pub const {}_DURATION: f32 = {};\n",
+            "        Self::{} =>  Self::{},",
+            self.pascal_case(),
             self.snake_case().to_uppercase(),
-            self.duration
-        )
-    }
-
-    fn file_name_const(&self) -> String {
-        format!(
-            "    pub const {}_FILE_NAME: &'static str = {:?};\n",
-            self.snake_case().to_uppercase(),
-            self.path
         )
     }
 
     fn get_duration(&self) -> String {
         format!(
-            "        Self::{} =>  Self::{}_DURATION,",
+            "        Self::{} =>  Self::{}.duration,",
             self.pascal_case(),
             self.snake_case().to_uppercase(),
         )
@@ -431,9 +444,18 @@ impl AudioFile {
 
     fn get_file_name(&self) -> String {
         format!(
-            "        Self::{} =>  Self::{}_FILE_NAME,",
+            "        Self::{} =>  Self::{}.path,",
             self.pascal_case(),
             self.snake_case().to_uppercase(),
+        )
+    }
+
+    fn audio_file_struct(&self) -> String {
+        format!(
+            "    pub const {}: AudioFile = AudioFile {{ path: {:?}, duration: {} }};",
+            self.snake_case().to_uppercase(),
+            self.path,
+            self.duration
         )
     }
 
