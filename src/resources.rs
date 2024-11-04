@@ -34,6 +34,7 @@ impl<T: Component + Default> ChannelSettings<T> {
 #[cfg_attr(feature = "inspect", reflect(Resource))]
 pub struct TrackSettings<T: Component + Default> {
     track_map: HashMap<AudioFiles, PlaybackSettings>,
+    default: PlaybackSettings,
     #[cfg_attr(feature = "inspect", reflect(ignore))]
     _marker: PhantomData<T>,
 }
@@ -42,7 +43,7 @@ impl<T: Component + Default> TrackSettings<T> {
     pub fn get_track_setting(&self, id: &AudioFiles) -> PlaybackSettings {
         self.track_map
             .get(id)
-            .map_or(PlaybackSettings::default(), |settings| settings.clone())
+            .map_or(self.default, |settings| settings.clone())
     }
 
     pub(super) fn set(&mut self, id: AudioFiles, settings: PlaybackSettings) {
@@ -53,5 +54,9 @@ impl<T: Component + Default> TrackSettings<T> {
         for (_, track) in self.track_map.iter_mut() {
             *track = settings.clone();
         }
+    }
+
+    pub(super) fn set_default(&mut self, settings: PlaybackSettings) {
+        self.default = settings;
     }
 }

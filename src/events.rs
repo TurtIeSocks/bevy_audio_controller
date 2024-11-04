@@ -5,7 +5,7 @@ use bevy::{
     ecs::{component::Component, entity::Entity, event::Event},
 };
 
-pub use macros::AudioChannel;
+pub use bevy_audio_controller_derive::AudioChannel;
 
 use crate::{audio_files::AudioFiles, plugin::DelayMode};
 
@@ -96,5 +96,20 @@ impl<Channel: Component + Default> TrackEvent<Channel> {
     pub fn with_track(mut self, id: AudioFiles) -> Self {
         self.id = Some(id);
         self
+    }
+}
+
+#[derive(Event)]
+pub struct DefaultSettingsEvent<Channel: Component + Default> {
+    pub(super) settings: PlaybackSettings,
+    _marker: PhantomData<Channel>,
+}
+
+impl<Channel: Component + Default> DefaultSettingsEvent<Channel> {
+    pub fn new(settings: PlaybackSettings) -> Self {
+        Self {
+            settings,
+            _marker: PhantomData::<Channel>,
+        }
     }
 }

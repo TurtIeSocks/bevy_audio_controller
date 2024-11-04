@@ -24,7 +24,7 @@ use crate::{
     ac_assets::AssetLoader,
     ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
-    events::{PlayEvent, TrackEvent, VolumeEvent},
+    events::{DefaultSettingsEvent, PlayEvent, TrackEvent, VolumeEvent},
     plugin::{DelayMode, GlobalAudioChannel, HasChannel},
     resources::{ChannelSettings, TrackSettings},
 };
@@ -44,6 +44,7 @@ impl ChannelRegistration for bevy::app::App {
         self.add_event::<PlayEvent<Channel>>()
             .add_event::<VolumeEvent<Channel>>()
             .add_event::<TrackEvent<Channel>>()
+            .add_event::<DefaultSettingsEvent<Channel>>()
             .init_resource::<ChannelSettings<Channel>>()
             .init_resource::<TrackSettings<Channel>>()
             .add_systems(
@@ -53,6 +54,8 @@ impl ChannelRegistration for bevy::app::App {
                     update_volume_on_insert::<Channel>,
                     volume_event_reader::<Channel>.run_if(on_event::<VolumeEvent<Channel>>()),
                     track_event_reader::<Channel>.run_if(on_event::<TrackEvent<Channel>>()),
+                    default_settings_reader::<Channel>
+                        .run_if(on_event::<DefaultSettingsEvent<Channel>>()),
                     update_track_volumes::<Channel>
                         .run_if(resource_changed::<ChannelSettings<Channel>>),
                 ),
@@ -109,6 +112,15 @@ fn track_event_reader<Channel: Component + Default>(
         } else {
             track_settings.set_all(event.settings);
         }
+    }
+}
+
+fn default_settings_reader<Channel: Component + Default>(
+    mut track_settings: ResMut<TrackSettings<Channel>>,
+    mut events: EventReader<DefaultSettingsEvent<Channel>>,
+) {
+    for event in events.read() {
+        track_settings.set_default(event.settings);
     }
 }
 
