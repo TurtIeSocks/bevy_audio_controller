@@ -52,6 +52,7 @@ impl bevy::ecs::component::Component for audio_files::AudioFiles {
 pub mod prelude {
     pub use super::audio_channel::AudioChannel;
     pub use super::audio_files::AudioFiles;
+    pub use super::bounds::ACBounds;
     pub use super::channel::*;
     pub use super::delay_mode::*;
     pub use super::events::*;

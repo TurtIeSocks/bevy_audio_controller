@@ -8,14 +8,14 @@ use bevy::{
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
-use crate::{bounds::Bounds, prelude::DelayMode};
+use crate::{bounds::ACBounds, prelude::DelayMode};
 
 use super::audio_files::AudioFiles;
 
 #[derive(Default, Resource)]
 #[cfg_attr(feature = "inspect", derive(Reflect))]
 #[cfg_attr(feature = "inspect", reflect(Resource))]
-pub struct ChannelSettings<Channel: Bounds> {
+pub struct ChannelSettings<Channel: ACBounds> {
     channel_volume: Volume,
     track_settings: HashMap<AudioFiles, PlaybackSettings>,
     default_settings: PlaybackSettings,
@@ -24,7 +24,7 @@ pub struct ChannelSettings<Channel: Bounds> {
     _marker: PhantomData<Channel>,
 }
 
-impl<T: Bounds> ChannelSettings<T> {
+impl<T: ACBounds> ChannelSettings<T> {
     pub fn get_channel_volume(&self) -> f32 {
         self.channel_volume.get()
     }

@@ -2,15 +2,15 @@ pub use bevy_audio_controller_derive::AudioChannel;
 
 use crate::{
     audio_files::AudioFiles,
-    bounds::Bounds,
+    bounds::ACBounds,
     events::{PlayEvent, SettingsEvent},
 };
 
 pub trait AudioChannel {
     fn play_event(id: AudioFiles) -> PlayEvent<Self>
     where
-        Self: Bounds;
+        Self: ACBounds;
     fn settings_event() -> SettingsEvent<Self>
     where
-        Self: Bounds;
+        Self: ACBounds;
 }

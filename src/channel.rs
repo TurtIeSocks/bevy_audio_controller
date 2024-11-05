@@ -20,7 +20,7 @@ use crate::{
     ac_assets::ACAssetLoader,
     ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
-    bounds::Bounds,
+    bounds::ACBounds,
     delay_mode::DelayMode,
     events::{PlayEvent, SettingsEvent},
     global::GlobalChannel,
@@ -30,11 +30,11 @@ use crate::{
 };
 
 pub trait ChannelRegistration {
-    fn register_audio_channel<Channel: Bounds>(&mut self) -> &mut Self;
+    fn register_audio_channel<Channel: ACBounds>(&mut self) -> &mut Self;
 }
 
 impl ChannelRegistration for bevy::app::App {
-    fn register_audio_channel<Channel: Bounds>(&mut self) -> &mut Self {
+    fn register_audio_channel<Channel: ACBounds>(&mut self) -> &mut Self {
         self.world_mut()
             .register_component_hooks::<Channel>()
             .on_add(|mut world, entity, _| {
@@ -70,7 +70,7 @@ impl ChannelRegistration for bevy::app::App {
     }
 }
 
-fn update_track_volumes<Channel: Bounds>(
+fn update_track_volumes<Channel: ACBounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
     track_query: Query<&AudioSink, With<Channel>>,
@@ -81,7 +81,7 @@ fn update_track_volumes<Channel: Bounds>(
     }
 }
 
-fn update_volume_on_insert<Channel: Bounds>(
+fn update_volume_on_insert<Channel: ACBounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
     sink_query: Query<&AudioSink, (Added<AudioSink>, With<Channel>)>,
@@ -92,7 +92,7 @@ fn update_volume_on_insert<Channel: Bounds>(
     }
 }
 
-fn ecs_system<Channel: Bounds>(
+fn ecs_system<Channel: ACBounds>(
     query: Query<
         (Entity, &AudioFiles, Option<&PlaybackSettings>, &DelayMode),
         (Added<Channel>, Without<AudioSink>),
@@ -113,7 +113,7 @@ fn ecs_system<Channel: Bounds>(
     ew.send_batch(events);
 }
 
-fn remove_audio_components<Channel: Bounds>(
+fn remove_audio_components<Channel: ACBounds>(
     mut commands: Commands,
     mut removed: RemovedComponents<AudioSink>,
     channel_query: Query<&AudioFiles, With<Channel>>,
@@ -128,7 +128,7 @@ fn remove_audio_components<Channel: Bounds>(
     }
 }
 
-fn play_event_reader<Channel: Bounds>(
+fn play_event_reader<Channel: ACBounds>(
     mut commands: Commands,
     asset_loader: Res<ACAssetLoader>,
     mut events: EventReader<PlayEvent<Channel>>,
@@ -193,7 +193,7 @@ fn play_event_reader<Channel: Bounds>(
     }
 }
 
-fn settings_event_reader<Channel: Bounds>(
+fn settings_event_reader<Channel: ACBounds>(
     mut channel_settings: ResMut<ChannelSettings<Channel>>,
     mut events: EventReader<SettingsEvent<Channel>>,
 ) {
