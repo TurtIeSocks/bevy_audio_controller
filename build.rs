@@ -171,7 +171,9 @@ mod ac_traits {{
                     r#"
 pub mod audio_files {{
     #![allow(unused)]
-    
+
+    use std::path::Path;
+
     use bevy::{{core::Name, log::warn}};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
@@ -420,7 +422,7 @@ impl AudioFile {
     fn get_enum_match(&self) -> String {
         let struct_name = self.pascal_case();
         format!(
-            "path if path == Self::{}.path => AudioFiles::{},",
+            "path if Path::new(path) == Path::new(Self::{}.path) => AudioFiles::{},",
             self.snake_case().to_uppercase(),
             struct_name
         )
