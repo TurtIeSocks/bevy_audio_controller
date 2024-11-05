@@ -19,6 +19,20 @@ use crate::{
     global::GlobalChannel,
 };
 
+/// Initializes the audio controller plugin
+/// - Registers the `GlobalChannel` as the default channel
+/// - Loads the audio assets
+///
+/// # Example
+/// ```
+/// use bevy_audio_controller::prelude::*;
+///
+/// fn main() {
+///     App::new()
+///         .add_plugins(AudioControllerPlugin)
+///         .run();
+/// }
+/// ```
 pub struct AudioControllerPlugin;
 
 impl Plugin for AudioControllerPlugin {

@@ -177,7 +177,8 @@ pub mod audio_files {{
     use bevy::{{core::Name, log::warn}};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
-
+    
+    /// Contains the path and duration of the audio file
     #[derive(Debug, Default)]
     #[cfg_attr(feature = "inspect", derive(Reflect))]
     pub struct AudioFile {{
@@ -185,6 +186,9 @@ pub mod audio_files {{
         pub duration: f32,
     }}
 
+    /// This is your "library" of audio files. It is a convenient way to safely spawn audio files in your game without having to rely on "magic strings".
+    /// 
+    /// If you need to insert strings dynamically from a file or a network request, you can use the `From<&str>` implementation to convert it to an `AudioFiles` enum.
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
     #[cfg_attr(feature = "inspect", derive(Reflect))]
     pub enum AudioFiles {{
@@ -527,7 +531,7 @@ impl AudioFile {
     /// 
     /// This is not meant to be inserted or spawned directly outside of the plugin internals
     /// 
-    /// Only use them for querying
+    /// Only use it for querying
     #[derive(Debug, Component, Default)]
     #[cfg_attr(feature = "inspect", derive(Reflect))]
     #[cfg_attr(feature = "inspect", reflect(Component))]

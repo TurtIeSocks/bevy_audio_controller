@@ -34,6 +34,7 @@ pub trait ChannelRegistration {
 }
 
 impl ChannelRegistration for App {
+    /// Registers an audio channel to the Bevy app
     fn register_audio_channel<Channel: ACBounds>(&mut self) -> &mut Self {
         self.world_mut()
             .register_component_hooks::<Channel>()
@@ -117,7 +118,6 @@ fn ecs_system<Channel: ACBounds>(
             events.push(event);
         }
     }
-    bevy::log::info!("Sending batch of {} events", events.len());
     ew.send_batch(events);
 }
 
@@ -152,7 +152,7 @@ fn play_event_reader<Channel: ACBounds>(
         let delay_mode = if let Some(mode) = event.delay_mode {
             mode
         } else {
-            channel_settings.get_default_delay_mode()
+            channel_settings.get_track_delay_mode(&event.id)
         };
         let can_play = audio_cache.can_play(&event.id);
         if delay_mode == DelayMode::Immediate || can_play {
@@ -197,18 +197,28 @@ fn settings_event_reader<Channel: ACBounds>(
     mut events: EventReader<SettingsEvent<Channel>>,
 ) {
     for event in events.read() {
-        if let Some(delay_mode) = event.delay_mode {
-            channel_settings.set_default_delay_mode(delay_mode);
-        }
         if let Some(volume) = event.volume {
             channel_settings.set_channel_volume(volume);
         }
-        if let Some(settings) = event.settings {
-            if let Some(id) = event.track {
+        if let Some(id) = event.track {
+            if let Some(delay_mode) = event.delay_mode {
+                channel_settings.set_track_delay_mode(id, delay_mode);
+            }
+            if let Some(settings) = event.settings {
                 channel_settings.set_track_settings(id, settings);
-            } else if event.all {
+            }
+        } else if event.all {
+            if let Some(delay_mode) = event.delay_mode {
+                channel_settings.set_all_track_delay_modes(delay_mode);
+            }
+            if let Some(settings) = event.settings {
                 channel_settings.set_all_track_settings(settings);
-            } else {
+            }
+        } else {
+            if let Some(delay_mode) = event.delay_mode {
+                channel_settings.set_default_delay_mode(delay_mode);
+            }
+            if let Some(settings) = event.settings {
                 channel_settings.set_default_settings(settings);
             }
         }
