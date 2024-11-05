@@ -17,7 +17,7 @@ use bevy::{
 };
 
 use crate::{
-    ac_assets::AssetLoader,
+    ac_assets::ACAssetLoader,
     ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
     bounds::Bounds,
@@ -63,7 +63,8 @@ impl ChannelRegistration for bevy::app::App {
             );
 
         #[cfg(feature = "inspect")]
-        self.register_type::<ChannelSettings<Channel>>();
+        self.register_type::<Channel>()
+            .register_type::<ChannelSettings<Channel>>();
 
         self
     }
@@ -129,7 +130,7 @@ fn remove_audio_components<Channel: Bounds>(
 
 fn play_event_reader<Channel: Bounds>(
     mut commands: Commands,
-    asset_loader: Res<AssetLoader>,
+    asset_loader: Res<ACAssetLoader>,
     mut events: EventReader<PlayEvent<Channel>>,
     channel_query: Query<(&AudioFiles, &AudioSink), With<Channel>>,
     channel_settings: Res<ChannelSettings<Channel>>,

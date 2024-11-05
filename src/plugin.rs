@@ -8,10 +8,11 @@ use bevy::{
         system::{Commands, Query},
     },
 };
+#[cfg(feature = "inspect")]
+use bevy::{ecs::reflect::ReflectComponent, reflect::Reflect};
 
 use crate::{
-    ac_assets::{load_assets, AssetLoader},
-    audio_files::AudioFiles,
+    ac_assets::{load_assets, ACAssetLoader},
     channel::ChannelRegistration,
     global::GlobalChannel,
 };
@@ -20,41 +21,27 @@ pub struct AudioControllerPlugin;
 
 impl Plugin for AudioControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<AssetLoader>()
+        app.init_resource::<ACAssetLoader>()
             .register_audio_channel::<GlobalChannel>()
             .add_systems(Startup, load_assets)
-            .add_systems(
-                Update,
-                (assign_rogue_sink_to_global, assign_rogue_audio_to_global),
-            );
+            .add_systems(Update, assign_empty_sink_to_global);
 
         #[cfg(feature = "inspect")]
-        app.register_type::<AssetLoader>();
+        app.register_type::<ACAssetLoader>();
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Component))]
 pub(super) struct HasChannel;
 
-fn assign_rogue_sink_to_global(
+fn assign_empty_sink_to_global(
     mut commands: Commands,
     query: Query<(Entity, Option<&HasChannel>), Added<AudioSink>>,
 ) {
-    for (entity, has_channel) in query.iter() {
-        if has_channel.is_some() {
-            commands.entity(entity).remove::<HasChannel>();
-        } else {
-            commands.entity(entity).insert(GlobalChannel);
-        }
-    }
-}
-
-fn assign_rogue_audio_to_global(
-    mut commands: Commands,
-    query: Query<(Entity, Option<&HasChannel>), Added<AudioFiles>>,
-) {
-    for (entity, not_global) in query.iter() {
-        if not_global.is_some() {
+    for (entity, has_channel_opt) in query.iter() {
+        if has_channel_opt.is_some() {
             commands.entity(entity).remove::<HasChannel>();
         } else {
             commands.entity(entity).insert(GlobalChannel);

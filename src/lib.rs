@@ -18,7 +18,8 @@ impl bevy::ecs::component::Component for audio_files::AudioFiles {
 
     fn register_component_hooks(_hooks: &mut bevy::ecs::component::ComponentHooks) {
         _hooks.on_add(|mut world, entity, _| {
-            let val = world.get::<Self>(entity).unwrap().clone();
+            let val: prelude::AudioFiles = world.get::<Self>(entity).unwrap().clone();
+            bevy::log::debug!("Adding audio track: {:?}", val);
             if world.get::<delay_mode::DelayMode>(entity).is_none() {
                 world
                     .commands()
@@ -36,6 +37,7 @@ impl bevy::ecs::component::Component for audio_files::AudioFiles {
 
         _hooks.on_remove(|mut world, entity, _| {
             let val = world.get::<Self>(entity).unwrap().clone();
+            bevy::log::debug!("Removing audio track: {:?}", val);
             if world.get::<delay_mode::DelayMode>(entity).is_none() {
                 world
                     .commands()
