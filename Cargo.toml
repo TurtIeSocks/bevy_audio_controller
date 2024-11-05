@@ -1,6 +1,6 @@
 [package]
 name = "bevy_audio_controller"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["TurtIeSocks"]
 license = "MIT OR Apache-2.0"
@@ -42,7 +42,7 @@ all-codecs = ["flac", "mp3", "ogg", "wav"]
 
 
 [dependencies]
-bevy_audio_controller_derive = { path = "macros", version = "0.2.1" }
+bevy_audio_controller_derive = { path = "macros", version = "0.2.2" }
 
 bevy = { version = "0.14", default-features = false, features = [
   "bevy_audio",
