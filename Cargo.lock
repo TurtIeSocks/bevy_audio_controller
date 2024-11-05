@@ -491,12 +491,21 @@ dependencies = [
 
 [[package]]
 name = "bevy_audio_controller"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
+ "bevy_audio_controller_derive",
  "cargo-emit",
  "symphonia",
+]
+
+[[package]]
+name = "bevy_audio_controller_derive"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn 2.0.85",
 ]
 
 [[package]]

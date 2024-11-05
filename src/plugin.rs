@@ -1,108 +1,77 @@
-use std::marker::PhantomData;
-
 use bevy::{
-    app::{App, Plugin, Update},
-    asset::AssetServer,
-    audio::{AudioBundle, PlaybackSettings},
-    core::Name,
+    app::{App, Plugin, Startup, Update},
+    audio::AudioSink,
     ecs::{
-        event::EventReader,
-        system::{Commands, Res, ResMut},
+        component::Component,
+        entity::Entity,
+        query::Added,
+        system::{Commands, Query},
     },
-    hierarchy::BuildChildren,
-    time::Time,
+    prelude::Without,
+};
+#[cfg(feature = "inspect")]
+use bevy::{ecs::reflect::ReflectComponent, reflect::Reflect};
+
+use crate::{
+    ac_assets::{load_assets, ACAssetLoader},
+    audio_files::AudioFiles,
+    channel::ChannelRegistration,
+    global::GlobalChannel,
 };
 
-use crate::{bounds::Bounds, cache::AudioCache, event::AudioControllerEvent};
+/// Initializes the audio controller plugin
+/// - Registers the `GlobalChannel` as the default channel
+/// - Loads the audio assets
+///
+/// # Example
+/// ```
+/// use bevy_audio_controller::prelude::*;
+///
+/// fn main() {
+///     App::new()
+///         .add_plugins(AudioControllerPlugin)
+///         .run();
+/// }
+/// ```
+pub struct AudioControllerPlugin;
 
-pub struct AudioControllerPlugin<T: Bounds> {
-    settings: PlaybackSettings,
-    fallback_delay_time: f32,
-    _marker: PhantomData<T>,
-}
-
-impl<T: Bounds> Plugin for AudioControllerPlugin<T> {
+impl Plugin for AudioControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(AudioCache::<T>::new(self.fallback_delay_time))
-            .add_event::<AudioControllerEvent<T>>()
-            .add_systems(Update, self.build_event_reader());
+        app.init_resource::<ACAssetLoader>()
+            .register_audio_channel::<GlobalChannel>()
+            .add_systems(Startup, load_assets)
+            .add_systems(Update, (assign_to_global_on_sink, assign_to_global_on_file));
 
         #[cfg(feature = "inspect")]
-        app.register_type::<AudioCache<T>>();
+        app.register_type::<ACAssetLoader>();
     }
 }
 
-impl<T: Bounds> Default for AudioControllerPlugin<T> {
-    fn default() -> Self {
-        Self {
-            settings: PlaybackSettings::DESPAWN,
-            fallback_delay_time: 0.25,
-            _marker: PhantomData::<T>,
+#[derive(Component, Debug)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Component))]
+pub(super) struct HasChannel;
+
+fn assign_to_global_on_sink(
+    mut commands: Commands,
+    query: Query<(Entity, Option<&HasChannel>), Added<AudioSink>>,
+) {
+    for (entity, has_channel_opt) in query.iter() {
+        if has_channel_opt.is_some() {
+            commands.entity(entity).remove::<HasChannel>();
+        } else {
+            commands.entity(entity).insert(GlobalChannel);
         }
     }
 }
 
-impl<T: Bounds> AudioControllerPlugin<T> {
-    pub fn new(fallback_delay_time: f32, settings: PlaybackSettings) -> Self {
-        Self {
-            fallback_delay_time,
-            settings,
-            _marker: PhantomData::<T>,
-        }
-    }
-
-    pub fn with_settings(mut self, settings: PlaybackSettings) -> Self {
-        self.settings = settings;
-        self
-    }
-
-    pub fn with_fallback_delay_time(mut self, fallback_delay_time: f32) -> Self {
-        self.fallback_delay_time = fallback_delay_time;
-        self
-    }
-
-    fn build_event_reader(
-        &self,
-    ) -> impl FnMut(
-        Commands,
-        ResMut<AudioCache<T>>,
-        Res<AssetServer>,
-        Res<Time>,
-        EventReader<AudioControllerEvent<T>>,
-    ) {
-        let settings = self.settings.clone();
-        move |mut commands: Commands,
-              mut audio_cache: ResMut<AudioCache<T>>,
-              asset_server: Res<AssetServer>,
-              time: Res<Time>,
-              mut events: EventReader<AudioControllerEvent<T>>| {
-            audio_cache.map.iter_mut().for_each(|(_, timer)| {
-                timer.tick(time.delta());
-            });
-
-            for event in events.read() {
-                let id = event.id.to_string();
-                let ready = audio_cache.can_play_sfx(&id);
-
-                if ready {
-                    audio_cache.reset_entry(id.clone());
-                }
-                if event.force || ready {
-                    let child = commands
-                        .spawn((
-                            AudioBundle {
-                                settings,
-                                source: asset_server.load(&id),
-                            },
-                            T::default(),
-                            Name::new(id),
-                        ))
-                        .id();
-                    if let Some(entity) = event.entity {
-                        commands.entity(entity).add_child(child);
-                    }
-                }
-            }
+fn assign_to_global_on_file(
+    mut commands: Commands,
+    query: Query<(Entity, Option<&HasChannel>), (Added<AudioFiles>, Without<AudioSink>)>,
+) {
+    for (entity, has_channel_opt) in query.iter() {
+        if has_channel_opt.is_none() {
+            commands.entity(entity).insert(GlobalChannel);
         }
     }
 }

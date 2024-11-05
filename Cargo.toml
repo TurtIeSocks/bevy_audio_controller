@@ -1,6 +1,6 @@
 [package]
 name = "bevy_audio_controller"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["TurtIeSocks"]
 license = "MIT OR Apache-2.0"
@@ -10,23 +10,15 @@ homepage = "https://github.com/TurtIeSocks/bevy_audio_controller"
 keywords = ["bevy", "gamedev", "audio", "music"]
 categories = ["game-development", "multimedia::audio"]
 readme = "./README.md"
+exclude = ["assets/"]
 
-[lib]
-path = "src/lib.rs"
-
-[dependencies]
-bevy = { version = "0.14", default-features = false, features = [
-  "bevy_audio",
-  "bevy_asset",
-] }
-
-[build-dependencies]
-symphonia = { version = "0.5", default-features = false }
-cargo-emit = "0.2.1"
+[workspace]
+members = ["macros"]
 
 [features]
+# Dev mode
+# default = ["all-codecs", "inspect"]
 default = []
-
 inspect = []
 
 # Pass features to symphonia
@@ -48,6 +40,18 @@ wav = ["symphonia/wav", "symphonia/pcm", "bevy/wav"]
 
 all-codecs = ["flac", "mp3", "ogg", "wav"]
 
+
+[dependencies]
+bevy = { version = "0.14", default-features = false, features = [
+  "bevy_audio",
+  "bevy_asset",
+] }
+bevy_audio_controller_derive = { path = "./macros" }
+
+[build-dependencies]
+symphonia = { version = "0.5", default-features = false }
+cargo-emit = "0.2.1"
+
 [dev-dependencies]
 bevy = { version = "0.14", features = [
   "bevy_audio",
@@ -63,6 +67,31 @@ path = "examples/basic.rs"
 required-features = ["ogg"]
 
 [[example]]
-name = "advanced"
-path = "examples/advanced.rs"
-required-features = ["ogg", "inspect"]
+name = "channels"
+path = "examples/channels.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "event_options"
+path = "examples/event_options.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "querying"
+path = "examples/querying.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "ecs"
+path = "examples/ecs.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "volume"
+path = "examples/volume.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "delays"
+path = "examples/delays.rs"
+required-features = ["ogg"]
