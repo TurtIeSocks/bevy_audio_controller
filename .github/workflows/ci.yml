@@ -20,7 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux dependencies
-        run: sudo apt-get install --no-install-recommends libwayland-dev libxkbcommon-dev libasound2-dev libwebkit2gtk-4.0
+        run: sudo apt-get install --no-install-recommends libwayland-dev libxkbcommon-dev libasound2-dev
 
       - name: Run cargo check
         run: cargo check --all-targets
@@ -44,7 +44,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux dependencies
-        run: sudo apt-get install --no-install-recommends libwayland-dev libxkbcommon-dev libasound2-dev libwebkit2gtk-4.0
+        run: sudo apt-get install --no-install-recommends libwayland-dev libxkbcommon-dev libasound2-dev
 
       - name: Run cargo doc
         run: cargo doc --features="inspect" --no-deps
@@ -60,7 +60,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Linux dependencies
-        run: sudo apt-get install --no-install-recommends libwayland-dev libxkbcommon-dev libasound2-dev libwebkit2gtk-4.0
+        run: sudo apt-get install --no-install-recommends libwayland-dev libxkbcommon-dev libasound2-dev
 
       - name: Build examples without inspect feature
         run: cargo build --examples --features="ogg"
