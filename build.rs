@@ -17,6 +17,11 @@ const OUTPUT_FILE_NAME: &str = "audio_controller.rs";
 fn main() {
     cargo_emit::rerun_if_env_changed!(ASSET_PATH_VAR);
 
+    let out_dir = env::var_os("OUT_DIR").unwrap();
+
+    let mut marker_file = File::create(Path::new(&out_dir).join(OUTPUT_FILE_NAME)).unwrap();
+    let mut files = Vec::new();
+
     // Check if env variable is set for the assets folder
     if let Some(dir) = env::var(ASSET_PATH_VAR)
         .ok()
@@ -70,11 +75,6 @@ fn main() {
         cargo_emit::rerun_if_changed!(dir.to_string_lossy());
         // cargo_emit::warning!("Asset folder found: {}", dir.to_string_lossy());
 
-        let out_dir = env::var_os("OUT_DIR").unwrap();
-
-        let mut marker_file = File::create(Path::new(&out_dir).join(OUTPUT_FILE_NAME)).unwrap();
-        let mut files = Vec::new();
-
         let building_for_wasm = std::env::var("CARGO_CFG_TARGET_ARCH") == Ok("wasm32".to_string());
 
         visit_dirs(&dir)
@@ -91,12 +91,30 @@ fn main() {
                     files.push(AudioFile { path, duration });
                 }
             });
+    } else if std::env::var("DOCS_RS").is_ok() {
+        //         let out_dir = env::var_os("OUT_DIR").unwrap();
+        //         let dest_path = Path::new(&out_dir).join("audio_lengths.rs");
 
-        // Write the markers
-        marker_file
-            .write_all(
-                format!(
-                    r#"pub mod markers {{
+        //         let mut file = File::create(dest_path).unwrap();
+        //         file.write_all(
+        //             "/// Generated function that will return the length of the input audio file. It does not panic if a file is missing but will log a warning.
+        // fn include_all_assets(registry: impl EmbeddedRegistry){}"
+        //                 .as_ref(),
+        //         )
+        // .unwrap();
+    } else {
+        cargo_emit::warning!(
+            "Could not find asset folder, please specify its path with ${}",
+            ASSET_PATH_VAR
+        );
+        // panic!("No asset folder found");
+    }
+
+    // Write the markers
+    marker_file
+        .write_all(
+            format!(
+                r#"pub mod markers {{
     #![allow(unused)]
 
     use bevy::ecs::component::Component;
@@ -105,21 +123,21 @@ fn main() {
 {}
 }}
 "#,
-                    files
-                        .iter()
-                        .map(|f| f.get_marker_struct())
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                )
-                .as_ref(),
+                files
+                    .iter()
+                    .map(|f| f.get_marker_struct())
+                    .collect::<Vec<_>>()
+                    .join("\n")
             )
-            .unwrap();
+            .as_ref(),
+        )
+        .unwrap();
 
-        // Write the insert_audio_track trait for entity commands so we can do some jank component inserts
-        marker_file
-            .write_all(
-                format!(
-                    r#"
+    // Write the insert_audio_track trait for entity commands so we can do some jank component inserts
+    marker_file
+        .write_all(
+            format!(
+                r#"
 mod ac_traits {{
     #![allow(unused)]
 
@@ -149,23 +167,23 @@ mod ac_traits {{
     }}
 }}
 "#,
-                    files
-                        .iter()
-                        .map(|f| f.insert_audio_track_impl())
-                        .collect::<Vec<_>>()
-                        .join("\n                "),
-                    files
-                        .iter()
-                        .map(|f| f.remove_audio_track_impl())
-                        .collect::<Vec<_>>()
-                        .join("\n                ")
-                )
-                .as_ref(),
+                files
+                    .iter()
+                    .map(|f| f.insert_audio_track_impl())
+                    .collect::<Vec<_>>()
+                    .join("\n                "),
+                files
+                    .iter()
+                    .map(|f| f.remove_audio_track_impl())
+                    .collect::<Vec<_>>()
+                    .join("\n                ")
             )
-            .unwrap();
+            .as_ref(),
+        )
+        .unwrap();
 
-        // Write the enum for the audio files
-        marker_file
+    // Write the enum for the audio files
+    marker_file
             .write_all(
                 format!(
                     r#"
@@ -339,10 +357,10 @@ pub mod audio_files {{
             )
             .unwrap();
 
-        marker_file
-            .write_all(
-                format!(
-                    r#"
+    marker_file
+        .write_all(
+            format!(
+                r#"
 mod ac_assets {{
     #![allow(unused)]
 
@@ -380,43 +398,25 @@ mod ac_assets {{
     }}
 }}
 "#,
-                    files
-                        .iter()
-                        .map(|f| f.asset_loader())
-                        .collect::<Vec<_>>()
-                        .join("\n"),
-                    files
-                        .iter()
-                        .map(|f| f.asset_field())
-                        .collect::<Vec<_>>()
-                        .join("\n"),
-                    files
-                        .iter()
-                        .map(|f| f.asset_getter())
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                )
-                .as_ref(),
+                files
+                    .iter()
+                    .map(|f| f.asset_loader())
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+                files
+                    .iter()
+                    .map(|f| f.asset_field())
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+                files
+                    .iter()
+                    .map(|f| f.asset_getter())
+                    .collect::<Vec<_>>()
+                    .join("\n")
             )
-            .unwrap();
-    } else if std::env::var("DOCS_RS").is_ok() {
-        //         let out_dir = env::var_os("OUT_DIR").unwrap();
-        //         let dest_path = Path::new(&out_dir).join("audio_lengths.rs");
-
-        //         let mut file = File::create(dest_path).unwrap();
-        //         file.write_all(
-        //             "/// Generated function that will return the length of the input audio file. It does not panic if a file is missing but will log a warning.
-        // fn include_all_assets(registry: impl EmbeddedRegistry){}"
-        //                 .as_ref(),
-        //         )
-        // .unwrap();
-    } else {
-        cargo_emit::warning!(
-            "Could not find asset folder, please specify its path with ${}",
-            ASSET_PATH_VAR
-        );
-        // panic!("No asset folder found");
-    }
+            .as_ref(),
+        )
+        .unwrap();
 }
 
 struct AudioFile {
