@@ -10,6 +10,7 @@ homepage = "https://github.com/TurtIeSocks/bevy_audio_controller"
 keywords = ["bevy", "gamedev", "audio", "music"]
 categories = ["game-development", "multimedia::audio"]
 readme = "./README.md"
+exclude = ["assets/"]
 
 [workspace]
 members = ["macros"]
