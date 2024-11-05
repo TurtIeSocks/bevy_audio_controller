@@ -81,11 +81,12 @@ fn tick_audio_cache<Channel: ACBounds>(mut cache: ResMut<AudioCache<Channel>>, t
 fn update_track_volumes<Channel: ACBounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
-    track_query: Query<&AudioSink, With<Channel>>,
+    track_query: Query<(&AudioSink, &AudioFiles), With<Channel>>,
 ) {
-    let volume = helpers::get_normalized_volume(channel, global);
-    for sink in track_query.iter() {
-        sink.set_volume(volume);
+    let volume = helpers::get_normalized_volume(&channel, &global);
+    for (sink, id) in track_query.iter() {
+        let track_volume = channel.get_track_setting(id).volume.get();
+        sink.set_volume(volume * track_volume);
     }
 }
 
@@ -94,9 +95,11 @@ fn update_volume_on_insert<Channel: ACBounds>(
     global: Res<ChannelSettings<GlobalChannel>>,
     sink_query: Query<&AudioSink, (Added<AudioSink>, With<Channel>)>,
 ) {
-    let volume = helpers::get_normalized_volume(channel, global);
+    let volume = helpers::get_normalized_volume(&channel, &global);
     for sink in sink_query.iter() {
-        sink.set_volume(sink.volume() * volume);
+        let new_volume = sink.volume() * volume;
+        bevy::log::debug!("Setting volume from {} to {}", volume, new_volume);
+        sink.set_volume(new_volume);
     }
 }
 
