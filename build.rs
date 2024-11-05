@@ -415,7 +415,7 @@ mod ac_assets {{
             "Could not find asset folder, please specify its path with ${}",
             ASSET_PATH_VAR
         );
-        panic!("No asset folder found");
+        // panic!("No asset folder found");
     }
 }
 
