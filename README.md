@@ -41,7 +41,7 @@ use bevy_audio_controller::prelude::*;
 #[derive(Component, Default, AudioChannel)]
 struct SfxChannel;
 
-type SfxEvent = AudioEvent<SfxChannel>;
+type SfxEvent = PlayEvent<SfxChannel>;
 
 fn main() {
     App::new()
