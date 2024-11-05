@@ -1,5 +1,5 @@
 use bevy::{
-    app::{PostUpdate, Update},
+    app::{App, PostUpdate, Update},
     audio::{AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
     ecs::{
         entity::Entity,
@@ -13,6 +13,7 @@ use bevy::{
     },
     hierarchy::BuildChildren,
     prelude::{DespawnRecursiveExt, RemovedComponents, Without},
+    time::Time,
 };
 
 use crate::{
@@ -32,7 +33,7 @@ pub trait ChannelRegistration {
     fn register_audio_channel<Channel: ACBounds>(&mut self) -> &mut Self;
 }
 
-impl ChannelRegistration for bevy::app::App {
+impl ChannelRegistration for App {
     fn register_audio_channel<Channel: ACBounds>(&mut self) -> &mut Self {
         self.world_mut()
             .register_component_hooks::<Channel>()
@@ -71,10 +72,7 @@ impl ChannelRegistration for bevy::app::App {
     }
 }
 
-fn tick_audio_cache<Channel: ACBounds>(
-    mut cache: ResMut<AudioCache<Channel>>,
-    time: Res<bevy::time::Time>,
-) {
+fn tick_audio_cache<Channel: ACBounds>(mut cache: ResMut<AudioCache<Channel>>, time: Res<Time>) {
     cache.tick(time.delta());
 }
 
