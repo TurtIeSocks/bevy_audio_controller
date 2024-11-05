@@ -7,12 +7,14 @@ use bevy::{
         query::Added,
         system::{Commands, Query},
     },
+    prelude::Without,
 };
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectComponent, reflect::Reflect};
 
 use crate::{
     ac_assets::{load_assets, ACAssetLoader},
+    audio_files::AudioFiles,
     channel::ChannelRegistration,
     global::GlobalChannel,
 };
@@ -24,7 +26,7 @@ impl Plugin for AudioControllerPlugin {
         app.init_resource::<ACAssetLoader>()
             .register_audio_channel::<GlobalChannel>()
             .add_systems(Startup, load_assets)
-            .add_systems(Update, assign_empty_sink_to_global);
+            .add_systems(Update, (assign_to_global_on_sink, assign_to_global_on_file));
 
         #[cfg(feature = "inspect")]
         app.register_type::<ACAssetLoader>();
@@ -36,7 +38,7 @@ impl Plugin for AudioControllerPlugin {
 #[cfg_attr(feature = "inspect", reflect(Component))]
 pub(super) struct HasChannel;
 
-fn assign_empty_sink_to_global(
+fn assign_to_global_on_sink(
     mut commands: Commands,
     query: Query<(Entity, Option<&HasChannel>), Added<AudioSink>>,
 ) {
@@ -44,6 +46,17 @@ fn assign_empty_sink_to_global(
         if has_channel_opt.is_some() {
             commands.entity(entity).remove::<HasChannel>();
         } else {
+            commands.entity(entity).insert(GlobalChannel);
+        }
+    }
+}
+
+fn assign_to_global_on_file(
+    mut commands: Commands,
+    query: Query<(Entity, Option<&HasChannel>), (Added<AudioFiles>, Without<AudioSink>)>,
+) {
+    for (entity, has_channel_opt) in query.iter() {
+        if has_channel_opt.is_none() {
             commands.entity(entity).insert(GlobalChannel);
         }
     }

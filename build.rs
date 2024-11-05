@@ -193,6 +193,10 @@ pub mod audio_files {{
         {}
     }}
 
+    pub(super) const ALL_FILES: [AudioFiles; {}] = [
+        {}
+    ];
+
     impl ToString for AudioFiles {{
         fn to_string(&self) -> String {{
             match self {{
@@ -283,6 +287,12 @@ pub mod audio_files {{
                     files
                         .iter()
                         .map(|f| f.enum_creator())
+                        .collect::<Vec<_>>()
+                        .join("\n        "),
+                    files.len(),
+                    files
+                        .iter()
+                        .map(|f| f.build_iterable())
                         .collect::<Vec<_>>()
                         .join("\n        "),
                     files
@@ -411,13 +421,9 @@ struct AudioFile {
 }
 
 impl AudioFile {
-    // fn get_length_match(&self) -> String {
-    //     format!(
-    //         r#"        {:?} => Some(markers::{}::DURATION),"#,
-    //         self.path,
-    //         self.pascal_case()
-    //     )
-    // }
+    fn build_iterable(&self) -> String {
+        format!("AudioFiles::{},", self.pascal_case())
+    }
 
     fn get_enum_match(&self) -> String {
         let struct_name = self.pascal_case();

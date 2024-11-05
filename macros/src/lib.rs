@@ -19,11 +19,11 @@ pub fn derive_channel(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         // pub type #default_type_name = DefaultSettingsEvent<#name>;
 
         impl AudioChannel for #name {
-            fn play_event(id: bevy_audio_controller::audio_files::AudioFiles) -> bevy_audio_controller::events::PlayEvent<#name> {
-                bevy_audio_controller::events::PlayEvent::new(id)
+            fn play_event(id: bevy_audio_controller::audio_files::AudioFiles) -> bevy_audio_controller::prelude::PlayEvent<#name> {
+                bevy_audio_controller::prelude::PlayEvent::new(id)
             }
-            fn settings_event() -> bevy_audio_controller::events::SettingsEvent<#name> {
-                bevy_audio_controller::events::SettingsEvent::new()
+            fn settings_event() -> bevy_audio_controller::prelude::SettingsEvent<#name> {
+                bevy_audio_controller::prelude::SettingsEvent::new()
             }
         }
     };

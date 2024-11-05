@@ -11,7 +11,7 @@ use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
 use crate::{bounds::ACBounds, prelude::DelayMode};
 
-use super::audio_files::AudioFiles;
+use super::audio_files::{AudioFiles, ALL_FILES};
 
 #[derive(Default, Resource)]
 #[cfg_attr(feature = "inspect", derive(Reflect))]
@@ -30,7 +30,7 @@ impl<T: ACBounds> ChannelSettings<T> {
         self.channel_volume.get()
     }
 
-    pub(super) fn set_channel_volume(&mut self, volume: f32) {
+    pub fn set_channel_volume(&mut self, volume: f32) {
         self.channel_volume = Volume::new(volume);
     }
 
@@ -40,13 +40,13 @@ impl<T: ACBounds> ChannelSettings<T> {
             .map_or(self.default_settings, |settings| settings.clone())
     }
 
-    pub(super) fn set_track_settings(&mut self, id: AudioFiles, settings: PlaybackSettings) {
+    pub fn set_track_settings(&mut self, id: AudioFiles, settings: PlaybackSettings) {
         self.track_settings.insert(id, settings);
     }
 
-    pub(super) fn set_all_track_settings(&mut self, settings: PlaybackSettings) {
-        for track in self.track_settings.values_mut() {
-            *track = settings.clone();
+    pub fn set_all_track_settings(&mut self, settings: PlaybackSettings) {
+        for track in ALL_FILES {
+            self.track_settings.insert(track, settings.clone());
         }
     }
 
@@ -54,7 +54,7 @@ impl<T: ACBounds> ChannelSettings<T> {
         self.default_settings.clone()
     }
 
-    pub(super) fn set_default_settings(&mut self, settings: PlaybackSettings) {
+    pub fn set_default_settings(&mut self, settings: PlaybackSettings) {
         self.default_settings = settings;
     }
 
@@ -62,7 +62,7 @@ impl<T: ACBounds> ChannelSettings<T> {
         self.default_delay_mode
     }
 
-    pub(super) fn set_default_delay_mode(&mut self, delay_mode: DelayMode) {
+    pub fn set_default_delay_mode(&mut self, delay_mode: DelayMode) {
         self.default_delay_mode = delay_mode;
     }
 }

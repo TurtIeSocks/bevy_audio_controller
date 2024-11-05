@@ -86,8 +86,8 @@ path = "examples/ecs.rs"
 required-features = ["ogg"]
 
 [[example]]
-name = "volume_ui"
-path = "examples/volume_ui.rs"
+name = "volume"
+path = "examples/volume.rs"
 required-features = ["ogg"]
 
 [[example]]

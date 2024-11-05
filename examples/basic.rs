@@ -46,7 +46,7 @@ fn play_with_plugin(mut sfx_play_ew: EventWriter<GlobalPlayEvent>) {
     let event = GlobalPlayEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
     sfx_play_ew.send(event);
     // You can send events using the enum values or a string
-    // ew.send(SfxPlayEvent::new("fire.ogg".into()));
+    // sfx_play_ew.send(GlobalPlayEvent::new("fire.ogg".into()));
 }
 
 fn play_without_plugin(mut commands: Commands, asset_server: Res<AssetServer>) {

@@ -66,7 +66,8 @@ impl ChannelRegistration for App {
 
         #[cfg(feature = "inspect")]
         self.register_type::<Channel>()
-            .register_type::<ChannelSettings<Channel>>();
+            .register_type::<ChannelSettings<Channel>>()
+            .register_type::<AudioCache<Channel>>();
 
         self
     }
@@ -116,6 +117,7 @@ fn ecs_system<Channel: ACBounds>(
             events.push(event);
         }
     }
+    bevy::log::info!("Sending batch of {} events", events.len());
     ew.send_batch(events);
 }
 

@@ -9,6 +9,11 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
+#[derive(Component, Default, AudioChannel)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Component))]
+struct FireChannel;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
@@ -17,6 +22,7 @@ fn main() {
         }))
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
+        .register_audio_channel::<FireChannel>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -29,7 +35,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut settings: ResMut<ChannelSettings<GlobalChannel>>) {
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(helpers::get_container())
@@ -39,26 +45,26 @@ fn setup(mut commands: Commands) {
                 40.0,
             ));
         });
+
+    settings.set_default_settings(PlaybackSettings::DESPAWN);
 }
 
 fn wait_mode(mut commands: Commands) {
     commands.spawn((
         AudioFiles::FireOGG,
+        FireChannel,
         PlaybackSettings::DESPAWN,
         // By default, `DelayMode::Wait` will be used if it's omitted
         // DelayMode::Wait,
     ));
     commands.spawn((
         AudioFiles::SprayOGG,
-        PlaybackSettings::DESPAWN,
-        DelayMode::Wait,
+        DelayMode::Milliseconds(500),
+        // We can override playback settings here but we've set it above for all so it's unnecessary
+        // PlaybackSettings::DESPAWN,
     ));
 }
 
 fn immediate_mode(mut commands: Commands) {
-    commands.spawn((
-        AudioFiles::FireOGG,
-        PlaybackSettings::DESPAWN,
-        DelayMode::Immediate,
-    ));
+    commands.spawn((AudioFiles::FireOGG, DelayMode::Immediate));
 }

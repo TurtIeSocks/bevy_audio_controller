@@ -59,9 +59,7 @@ fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
     let default_settings_event =
         SfxChannel::settings_event().with_settings(PlaybackSettings::DESPAWN);
 
-    // Set the playback settings for all tracks in the channel
-    // Please do note that this will only apply to tracks that have already been individually set
-    // In this particular case it is doing nothing
+    // Sets (and overwrites!) the playback settings for all tracks in your assets folder for the channel
     let all_track_settings_event = SfxChannel::settings_event()
         .with_settings(PlaybackSettings::REMOVE)
         .all();
@@ -91,6 +89,7 @@ fn play_sfx(
     let player_entity = player_query.single();
     ew.send(
         SfxChannel::play_event(AudioFiles::FireOGG)
+            // Overrides the default settings for this track
             .with_settings(PlaybackSettings::REMOVE)
             .with_entity(parent_entity)
             .with_delay_mode(DelayMode::Wait)
