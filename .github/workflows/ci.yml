@@ -25,8 +25,8 @@ jobs:
       - name: Run cargo check
         run: cargo check --all-targets
 
-      - name: Run cargo check with atlas feature
-        run: cargo check --all-targets --features atlas
+      - name: Run cargo check with all feature
+        run: cargo check --all-targets --all-features
 
       - name: Run cargo check headless
         run: cargo check --all-targets --no-default-features
