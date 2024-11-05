@@ -3,6 +3,9 @@
 <!--
 [![license](https://img.shields.io/crates/l/bevy_audio_controller)](https://github.com/TurtIeSocks/bevy_audio_controller#license) -->
 
+[![crates.io](https://img.shields.io/crates/v/bevy_audio_controller)](https://crates.io/crates/bevy_audio_controller)
+[![license](https://img.shields.io/crates/l/bevy_audio_controller)](https://github.com/TurtIeSocks/bevy_audio_controller#license)
+
 An extremely convenient plugin that provides a solid audio controller for Bevy with very minimal boilerplate!
 
 ## Features
