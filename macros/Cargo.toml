@@ -1,14 +1,19 @@
 [package]
 name = "bevy_audio_controller_derive"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+authors = ["TurtIeSocks"]
+license = "MIT OR Apache-2.0"
+description = "Derive macros for bevy_audio_controller"
+repository = "https://github.com/TurtIeSocks/bevy_audio_controller"
+homepage = "https://github.com/TurtIeSocks/bevy_audio_controller"
+keywords = ["bevy", "gamedev", "audio", "music"]
+categories = ["game-development", "multimedia::audio"]
+readme = "../README.md"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2.0", default-features = false, features = [
-  "full",
-  "visit",
-] }
+syn = { version = "2.0", features = ["full", "visit"] }
 quote = "1.0"
