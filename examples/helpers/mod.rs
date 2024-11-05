@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 
-pub fn get_text(text: &str) -> TextBundle {
+pub fn get_text(text: &str, size: f32) -> TextBundle {
     TextBundle {
         text: Text::from_section(
             text,
             TextStyle {
-                font_size: 40.0,
+                font_size: size,
                 ..Default::default()
             },
         )
@@ -22,6 +22,8 @@ pub fn get_container() -> NodeBundle {
             display: Display::Flex,
             align_items: AlignItems::Center,
             justify_content: JustifyContent::Center,
+            flex_direction: FlexDirection::Column,
+            row_gap: Val::Px(10.),
             ..Default::default()
         },
         ..Default::default()

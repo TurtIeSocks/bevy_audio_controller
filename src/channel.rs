@@ -13,7 +13,6 @@ use bevy::{
     },
     hierarchy::BuildChildren,
     prelude::{DespawnRecursiveExt, RemovedComponents, Without},
-    utils::hashbrown::HashSet,
 };
 
 use crate::{
@@ -26,7 +25,7 @@ use crate::{
     global::GlobalChannel,
     helpers,
     plugin::HasChannel,
-    resources::ChannelSettings,
+    resources::{AudioCache, ChannelSettings},
 };
 
 pub trait ChannelRegistration {
@@ -44,9 +43,11 @@ impl ChannelRegistration for bevy::app::App {
         self.add_event::<PlayEvent<Channel>>()
             .add_event::<SettingsEvent<Channel>>()
             .init_resource::<ChannelSettings<Channel>>()
+            .init_resource::<AudioCache<Channel>>()
             .add_systems(
                 Update,
                 (
+                    tick_audio_cache::<Channel>,
                     ecs_system::<Channel>,
                     update_volume_on_insert::<Channel>,
                     settings_event_reader::<Channel>.run_if(on_event::<SettingsEvent<Channel>>()),
@@ -68,6 +69,13 @@ impl ChannelRegistration for bevy::app::App {
 
         self
     }
+}
+
+fn tick_audio_cache<Channel: ACBounds>(
+    mut cache: ResMut<AudioCache<Channel>>,
+    time: Res<bevy::time::Time>,
+) {
+    cache.tick(time.delta());
 }
 
 fn update_track_volumes<Channel: ACBounds>(
@@ -132,22 +140,9 @@ fn play_event_reader<Channel: ACBounds>(
     mut commands: Commands,
     asset_loader: Res<ACAssetLoader>,
     mut events: EventReader<PlayEvent<Channel>>,
-    channel_query: Query<(&AudioFiles, &AudioSink), With<Channel>>,
     channel_settings: Res<ChannelSettings<Channel>>,
+    mut audio_cache: ResMut<AudioCache<Channel>>,
 ) {
-    let mut is_playing = channel_query
-        .iter()
-        .filter_map(
-            |(file, sink)| {
-                if sink.is_paused() {
-                    None
-                } else {
-                    Some(file)
-                }
-            },
-        )
-        .collect::<HashSet<&AudioFiles>>();
-
     for event in events.read() {
         let settings = if let Some(event_settings) = event.settings {
             event_settings
@@ -159,8 +154,12 @@ fn play_event_reader<Channel: ACBounds>(
         } else {
             channel_settings.get_default_delay_mode()
         };
-        if delay_mode == DelayMode::Immediate || !is_playing.contains(&event.id) {
-            is_playing.insert(&event.id);
+        let can_play = audio_cache.can_play(&event.id);
+        if delay_mode == DelayMode::Immediate || can_play {
+            if can_play {
+                let next_delay = delay_mode.get_delay(event.id.duration());
+                audio_cache.set_entry(event.id, next_delay);
+            }
             if let Some(handler) = asset_loader.get(&event.id) {
                 let bundle = (handler, settings, event.id, Channel::default());
                 if let Some(dest_entity) = event.entity {

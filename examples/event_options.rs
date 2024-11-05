@@ -5,7 +5,9 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
-#[derive(Component, Default, AudioChannel, Reflect)]
+#[derive(Component, Default, AudioChannel)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Component))]
 struct SfxChannel;
 
 #[derive(Component)]
@@ -44,6 +46,7 @@ fn setup(mut commands: Commands) {
         .with_children(|parent| {
             parent.spawn(helpers::get_text(
                 "Press SPACE to force a sound effect to override the cache",
+                40.0,
             ));
         });
 }

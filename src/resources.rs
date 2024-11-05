@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use bevy::{
     audio::{PlaybackSettings, Volume},
     ecs::system::Resource,
+    time::{Timer, TimerMode},
     utils::hashbrown::HashMap,
 };
 #[cfg(feature = "inspect")]
@@ -63,5 +64,31 @@ impl<T: ACBounds> ChannelSettings<T> {
 
     pub(super) fn set_default_delay_mode(&mut self, delay_mode: DelayMode) {
         self.default_delay_mode = delay_mode;
+    }
+}
+
+#[derive(Default, Resource)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Resource))]
+pub(super) struct AudioCache<T: ACBounds> {
+    pub(super) map: HashMap<AudioFiles, Timer>,
+    #[cfg_attr(feature = "inspect", reflect(ignore))]
+    _marker: PhantomData<T>,
+}
+
+impl<T: ACBounds> AudioCache<T> {
+    pub(super) fn tick(&mut self, time: bevy::utils::Duration) {
+        for timer in self.map.values_mut() {
+            timer.tick(time);
+        }
+    }
+
+    pub(super) fn can_play(&self, id: &AudioFiles) -> bool {
+        self.map.get(id).map_or(true, |timer| timer.finished())
+    }
+
+    pub(super) fn set_entry(&mut self, id: AudioFiles, duration: f32) {
+        self.map
+            .insert(id, Timer::from_seconds(duration, TimerMode::Once));
     }
 }

@@ -14,17 +14,6 @@ readme = "./README.md"
 [workspace]
 members = ["macros"]
 
-[dependencies]
-bevy = { version = "0.14", default-features = false, features = [
-  "bevy_audio",
-  "bevy_asset",
-] }
-bevy_audio_controller_derive = { path = "./macros" }
-
-[build-dependencies]
-symphonia = { version = "0.5", default-features = false }
-cargo-emit = "0.2.1"
-
 [features]
 # Dev mode
 # default = ["all-codecs", "inspect"]
@@ -49,6 +38,18 @@ ogg = ["symphonia/ogg", "symphonia/vorbis", "bevy/vorbis"]
 wav = ["symphonia/wav", "symphonia/pcm", "bevy/wav"]
 
 all-codecs = ["flac", "mp3", "ogg", "wav"]
+
+
+[dependencies]
+bevy = { version = "0.14", default-features = false, features = [
+  "bevy_audio",
+  "bevy_asset",
+] }
+bevy_audio_controller_derive = { path = "./macros" }
+
+[build-dependencies]
+symphonia = { version = "0.5", default-features = false }
+cargo-emit = "0.2.1"
 
 [dev-dependencies]
 bevy = { version = "0.14", features = [
@@ -87,4 +88,9 @@ required-features = ["ogg"]
 [[example]]
 name = "volume_ui"
 path = "examples/volume_ui.rs"
+required-features = ["ogg"]
+
+[[example]]
+name = "delays"
+path = "examples/delays.rs"
 required-features = ["ogg"]

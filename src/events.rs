@@ -46,11 +46,12 @@ impl<T: ACBounds> PlayEvent<T> {
         self
     }
 
-    pub fn as_child(self) -> Self {
-        Self {
-            child: true,
-            ..self
-        }
+    pub fn as_child(mut self) -> Self {
+        self.entity.expect(
+            "Cannot set as child without an entity, try calling `with_entity(entity)` first",
+        );
+        self.child = true;
+        self
     }
 }
 

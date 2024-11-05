@@ -3,10 +3,14 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
-#[derive(Component, Default, AudioChannel, Reflect)]
+#[derive(Component, Default, AudioChannel)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Component))]
 struct MusicChannel;
 
-#[derive(Component, Default, AudioChannel, Reflect)]
+#[derive(Component, Default, AudioChannel)]
+#[cfg_attr(feature = "inspect", derive(Reflect))]
+#[cfg_attr(feature = "inspect", reflect(Component))]
 struct SfxChannel;
 
 fn main() {

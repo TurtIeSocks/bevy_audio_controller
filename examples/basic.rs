@@ -36,6 +36,7 @@ fn setup(mut commands: Commands) {
         .with_children(|parent| {
             parent.spawn(helpers::get_text(
                 "Press SPACE to toggle between\nplugin and non-plugin audio",
+                40.0,
             ));
         });
 }

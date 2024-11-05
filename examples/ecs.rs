@@ -36,6 +36,7 @@ fn setup(mut commands: Commands) {
         .with_children(|parent| {
             parent.spawn(helpers::get_text(
                 "Press SPACE to toggle between\n \"DelayMode::Wait\" and \"DelayMode::Immediate\"",
+                40.0,
             ));
         });
 }
