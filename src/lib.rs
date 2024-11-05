@@ -54,6 +54,7 @@ pub mod prelude {
     pub use super::delay_mode::*;
     pub use super::events::*;
     pub use super::global::*;
+    #[allow(unused)]
     pub use super::markers::*;
     pub use super::plugin::*;
     pub use super::resources::*;

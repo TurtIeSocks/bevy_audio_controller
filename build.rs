@@ -97,6 +97,7 @@ fn main() {
             .write_all(
                 format!(
                     r#"pub mod markers {{
+    #![allow(unused)]
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
 
@@ -118,6 +119,7 @@ fn main() {
                 format!(
                     r#"
 mod ac_traits {{
+    #![allow(unused)]
     use super::{{markers::*, audio_files::*}};
 
     pub(crate) trait CommandAudioTracks {{
@@ -162,6 +164,8 @@ mod ac_traits {{
                 format!(
                     r#"
 pub mod audio_files {{
+    #![allow(unused)]
+    
     #[derive(Debug, Default)]
     #[cfg_attr(feature = "inspect", derive(bevy::reflect::Reflect))]
     pub struct AudioFile {{
@@ -314,6 +318,8 @@ pub mod audio_files {{
                 format!(
                     r#"
 mod ac_assets {{
+    #![allow(unused)]
+
     use super::audio_files::AudioFiles;
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectResource, reflect::Reflect}};
