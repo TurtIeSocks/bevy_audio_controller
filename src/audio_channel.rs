@@ -1,12 +1,16 @@
 pub use bevy_audio_controller_derive::AudioChannel;
 
-use crate::{audio_files, events};
+use crate::{
+    audio_files::AudioFiles,
+    bounds::Bounds,
+    events::{PlayEvent, SettingsEvent},
+};
 
 pub trait AudioChannel {
-    fn play_event(id: audio_files::AudioFiles) -> events::PlayEvent<Self>
+    fn play_event(id: AudioFiles) -> PlayEvent<Self>
     where
-        Self: bevy::ecs::component::Component + Default;
-    fn settings_event() -> events::SettingsEvent<Self>
+        Self: Bounds;
+    fn settings_event() -> SettingsEvent<Self>
     where
-        Self: bevy::ecs::component::Component + Default;
+        Self: Bounds;
 }

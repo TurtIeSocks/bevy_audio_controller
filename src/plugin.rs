@@ -1,5 +1,3 @@
-#[cfg(feature = "inspect")]
-use bevy::reflect::{FromReflect, GetTypeRegistration, TypePath};
 use bevy::{
     app::{App, Plugin, Startup, Update},
     audio::AudioSink,
@@ -15,7 +13,7 @@ use crate::{
     ac_assets::{load_assets, AssetLoader},
     audio_files::AudioFiles,
     channel::ChannelRegistration,
-    global_channel::GlobalChannel,
+    global::GlobalChannel,
 };
 
 pub struct AudioControllerPlugin;
@@ -29,6 +27,9 @@ impl Plugin for AudioControllerPlugin {
                 Update,
                 (assign_rogue_sink_to_global, assign_rogue_audio_to_global),
             );
+
+        #[cfg(feature = "inspect")]
+        app.register_type::<AssetLoader>();
     }
 }
 

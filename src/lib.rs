@@ -1,11 +1,11 @@
 use ac_traits::CommandAudioTracks;
 
-// mod bounds;
 pub mod audio_channel;
+mod bounds;
 pub mod channel;
 pub mod delay_mode;
 pub mod events;
-pub mod global_channel;
+pub mod global;
 mod helpers;
 pub mod plugin;
 pub mod resources;
@@ -53,7 +53,7 @@ pub mod prelude {
     pub use super::channel::*;
     pub use super::delay_mode::*;
     pub use super::events::*;
-    pub use super::global_channel::*;
+    pub use super::global::*;
     pub use super::markers::*;
     pub use super::plugin::*;
     pub use super::resources::*;

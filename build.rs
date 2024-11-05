@@ -96,7 +96,13 @@ fn main() {
         marker_file
             .write_all(
                 format!(
-                    "pub mod markers {{\n{}\n}}\n",
+                    r#"pub mod markers {{
+    #[cfg(feature = "inspect")]
+    use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
+
+{}
+}}
+"#,
                     files
                         .iter()
                         .map(|f| f.get_marker_struct())
@@ -157,12 +163,14 @@ mod ac_traits {{
                     r#"
 pub mod audio_files {{
     #[derive(Debug, Default)]
+    #[cfg_attr(feature = "inspect", derive(bevy::reflect::Reflect))]
     pub struct AudioFile {{
         pub path: &'static str,
         pub duration: f32,
     }}
 
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+    #[cfg_attr(feature = "inspect", derive(bevy::reflect::Reflect))]
     pub enum AudioFiles {{
         #[default]
         Unknown,
@@ -307,12 +315,16 @@ pub mod audio_files {{
                     r#"
 mod ac_assets {{
     use super::audio_files::AudioFiles;
-    
+    #[cfg(feature = "inspect")]
+    use bevy::{{ecs::reflect::ReflectResource, reflect::Reflect}};
+
     pub(super) fn load_assets(asset_server: bevy::ecs::system::Res<bevy::asset::AssetServer>, mut internal_loader: bevy::ecs::system::ResMut<AssetLoader>) {{
         {}
     }}
 
     #[derive(Default, bevy::ecs::system::Resource)]
+    #[cfg_attr(feature = "inspect", derive(Reflect))]
+    #[cfg_attr(feature = "inspect", reflect(Resource))]
     pub(super) struct AssetLoader {{
         {}
     }}
@@ -469,6 +481,8 @@ impl AudioFile {
     /// 
     /// Only use them for querying
     #[derive(Debug, bevy::ecs::component::Component, Default)]
+    #[cfg_attr(feature = "inspect", derive(Reflect))]
+    #[cfg_attr(feature = "inspect", reflect(Component))]
     pub struct {};
 "#,
             self.path, struct_name,

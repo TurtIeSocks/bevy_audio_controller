@@ -2,7 +2,6 @@ use bevy::{
     app::{PostUpdate, Update},
     audio::{AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
     ecs::{
-        component::Component,
         entity::Entity,
         event::{EventReader, EventWriter},
         query::{Added, With},
@@ -18,24 +17,24 @@ use bevy::{
 };
 
 use crate::{
-    // bounds::Bounds,
     ac_assets::AssetLoader,
     ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
+    bounds::Bounds,
     delay_mode::DelayMode,
     events::{PlayEvent, SettingsEvent},
-    global_channel::GlobalChannel,
+    global::GlobalChannel,
     helpers,
     plugin::HasChannel,
     resources::ChannelSettings,
 };
 
 pub trait ChannelRegistration {
-    fn register_audio_channel<Channel: Component + Default>(&mut self) -> &mut Self;
+    fn register_audio_channel<Channel: Bounds>(&mut self) -> &mut Self;
 }
 
 impl ChannelRegistration for bevy::app::App {
-    fn register_audio_channel<Channel: Component + Default>(&mut self) -> &mut Self {
+    fn register_audio_channel<Channel: Bounds>(&mut self) -> &mut Self {
         self.world_mut()
             .register_component_hooks::<Channel>()
             .on_add(|mut world, entity, _| {
@@ -61,11 +60,16 @@ impl ChannelRegistration for bevy::app::App {
                     remove_audio_components::<Channel>,
                     play_event_reader::<Channel>.run_if(on_event::<PlayEvent<Channel>>()),
                 ),
-            )
+            );
+
+        #[cfg(feature = "inspect")]
+        self.register_type::<ChannelSettings<Channel>>();
+
+        self
     }
 }
 
-fn update_track_volumes<Channel: Component + Default>(
+fn update_track_volumes<Channel: Bounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
     track_query: Query<&AudioSink, With<Channel>>,
@@ -76,7 +80,7 @@ fn update_track_volumes<Channel: Component + Default>(
     }
 }
 
-fn update_volume_on_insert<Channel: Component + Default>(
+fn update_volume_on_insert<Channel: Bounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
     sink_query: Query<&AudioSink, (Added<AudioSink>, With<Channel>)>,
@@ -87,7 +91,7 @@ fn update_volume_on_insert<Channel: Component + Default>(
     }
 }
 
-fn ecs_system<Channel: Component + Default>(
+fn ecs_system<Channel: Bounds>(
     query: Query<
         (Entity, &AudioFiles, Option<&PlaybackSettings>, &DelayMode),
         (Added<Channel>, Without<AudioSink>),
@@ -108,7 +112,7 @@ fn ecs_system<Channel: Component + Default>(
     ew.send_batch(events);
 }
 
-fn remove_audio_components<Channel: Component + Default>(
+fn remove_audio_components<Channel: Bounds>(
     mut commands: Commands,
     mut removed: RemovedComponents<AudioSink>,
     channel_query: Query<&AudioFiles, With<Channel>>,
@@ -123,7 +127,7 @@ fn remove_audio_components<Channel: Component + Default>(
     }
 }
 
-fn play_event_reader<Channel: Component + Default>(
+fn play_event_reader<Channel: Bounds>(
     mut commands: Commands,
     asset_loader: Res<AssetLoader>,
     mut events: EventReader<PlayEvent<Channel>>,
@@ -188,7 +192,7 @@ fn play_event_reader<Channel: Component + Default>(
     }
 }
 
-fn settings_event_reader<Channel: Component + Default>(
+fn settings_event_reader<Channel: Bounds>(
     mut channel_settings: ResMut<ChannelSettings<Channel>>,
     mut events: EventReader<SettingsEvent<Channel>>,
 ) {

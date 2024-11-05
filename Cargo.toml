@@ -27,8 +27,8 @@ cargo-emit = "0.2.1"
 
 [features]
 # Dev mode
-default = ["all-codecs"]
-# default = []
+# default = ["all-codecs", "inspect"]
+default = []
 inspect = []
 
 # Pass features to symphonia
@@ -65,8 +65,8 @@ path = "examples/basic.rs"
 required-features = ["ogg"]
 
 [[example]]
-name = "multiple"
-path = "examples/multiple.rs"
+name = "channels"
+path = "examples/channels.rs"
 required-features = ["ogg"]
 
 [[example]]

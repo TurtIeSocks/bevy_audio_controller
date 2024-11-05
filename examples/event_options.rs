@@ -5,7 +5,7 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
-#[derive(Component, Default, AudioChannel)]
+#[derive(Component, Default, AudioChannel, Reflect)]
 struct SfxChannel;
 
 #[derive(Component)]

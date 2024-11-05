@@ -2,13 +2,13 @@ use std::marker::PhantomData;
 
 use bevy::{
     audio::PlaybackSettings,
-    ecs::{component::Component, entity::Entity, event::Event},
+    ecs::{entity::Entity, event::Event},
 };
 
-use crate::{audio_files::AudioFiles, delay_mode::DelayMode};
+use crate::{audio_files::AudioFiles, bounds::Bounds, delay_mode::DelayMode};
 
 #[derive(Event)]
-pub struct PlayEvent<T: Component + Default> {
+pub struct PlayEvent<T: Bounds> {
     pub(super) id: AudioFiles,
     pub(super) entity: Option<Entity>,
     pub(super) child: bool,
@@ -17,7 +17,7 @@ pub struct PlayEvent<T: Component + Default> {
     _marker: PhantomData<T>,
 }
 
-impl<T: Component + Default> PlayEvent<T> {
+impl<T: Bounds> PlayEvent<T> {
     pub fn new(id: AudioFiles) -> Self {
         Self {
             id,
@@ -54,14 +54,14 @@ impl<T: Component + Default> PlayEvent<T> {
     }
 }
 
-impl<Channel: Component + Default> From<AudioFiles> for PlayEvent<Channel> {
+impl<Channel: Bounds> From<AudioFiles> for PlayEvent<Channel> {
     fn from(id: AudioFiles) -> Self {
         Self::new(id)
     }
 }
 
 #[derive(Event)]
-pub struct SettingsEvent<Channel: Component + Default> {
+pub struct SettingsEvent<Channel: Bounds> {
     pub(super) settings: Option<PlaybackSettings>,
     pub(super) volume: Option<f32>,
     pub(super) track: Option<AudioFiles>,
@@ -70,7 +70,7 @@ pub struct SettingsEvent<Channel: Component + Default> {
     _marker: PhantomData<Channel>,
 }
 
-impl<Channel: Component + Default> SettingsEvent<Channel> {
+impl<Channel: Bounds> SettingsEvent<Channel> {
     pub fn new() -> Self {
         Self {
             track: None,

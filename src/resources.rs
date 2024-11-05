@@ -1,22 +1,22 @@
-use std::{marker::PhantomData, sync::Mutex};
+use std::marker::PhantomData;
 
 use bevy::{
     audio::{PlaybackSettings, Volume},
-    ecs::{component::Component, system::Resource},
+    ecs::system::Resource,
     utils::hashbrown::HashMap,
 };
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
-use crate::prelude::DelayMode;
+use crate::{bounds::Bounds, prelude::DelayMode};
 
 use super::audio_files::AudioFiles;
 
 #[derive(Default, Resource)]
 #[cfg_attr(feature = "inspect", derive(Reflect))]
 #[cfg_attr(feature = "inspect", reflect(Resource))]
-pub struct ChannelSettings<Channel: Component + Default> {
-    channel_volume: Mutex<Volume>,
+pub struct ChannelSettings<Channel: Bounds> {
+    channel_volume: Volume,
     track_settings: HashMap<AudioFiles, PlaybackSettings>,
     default_settings: PlaybackSettings,
     default_delay_mode: DelayMode,
@@ -24,13 +24,13 @@ pub struct ChannelSettings<Channel: Component + Default> {
     _marker: PhantomData<Channel>,
 }
 
-impl<T: Component + Default> ChannelSettings<T> {
+impl<T: Bounds> ChannelSettings<T> {
     pub fn get_channel_volume(&self) -> f32 {
-        self.channel_volume.lock().unwrap().get()
+        self.channel_volume.get()
     }
 
-    pub(super) fn set_channel_volume(&self, volume: f32) {
-        *self.channel_volume.lock().unwrap() = Volume::new(volume);
+    pub(super) fn set_channel_volume(&mut self, volume: f32) {
+        self.channel_volume = Volume::new(volume);
     }
 
     pub fn get_track_setting(&self, id: &AudioFiles) -> PlaybackSettings {

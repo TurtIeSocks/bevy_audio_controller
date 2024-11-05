@@ -1,8 +1,8 @@
-use bevy::ecs::{component::Component, system::Res};
+use bevy::ecs::system::Res;
 
-use crate::{global_channel::GlobalChannel, resources::ChannelSettings};
+use crate::{bounds::Bounds, global::GlobalChannel, resources::ChannelSettings};
 
-pub fn get_normalized_volume<Channel: Component + Default>(
+pub fn get_normalized_volume<Channel: Bounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
 ) -> f32 {

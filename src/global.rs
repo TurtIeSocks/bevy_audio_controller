@@ -1,4 +1,6 @@
 use bevy::ecs::component::Component;
+#[cfg(feature = "inspect")]
+use bevy::{ecs::reflect::ReflectComponent, reflect::Reflect};
 
 use crate::{
     audio_channel::AudioChannel,
