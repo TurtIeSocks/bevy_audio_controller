@@ -3,10 +3,10 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default, AudioChannel)]
 struct MusicChannel;
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default, AudioChannel)]
 struct SfxChannel;
 
 fn main() {
@@ -25,15 +25,14 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
-    ew.send(
-        PlayEvent::<MusicChannel>::new("background.ogg".into())
-            .with_settings(PlaybackSettings::LOOP),
-    );
     commands.spawn(Camera2dBundle::default());
+    let event =
+        MusicChannel::play_event("background.ogg".into()).with_settings(PlaybackSettings::LOOP);
+    ew.send(event);
 }
 
 fn play_sfx(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
-    ew.send(
-        PlayEvent::<SfxChannel>::from(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN),
-    );
+    let event =
+        SfxChannel::play_event(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
+    ew.send(event);
 }

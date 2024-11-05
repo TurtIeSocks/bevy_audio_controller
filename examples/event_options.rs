@@ -23,7 +23,7 @@ fn main() {
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, set_channel_settings))
         .add_systems(
             Update,
             (
@@ -48,6 +48,34 @@ fn setup(mut commands: Commands) {
         });
 }
 
+fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
+    // Set the volume for the channel
+    let vol_event = SfxChannel::settings_event().with_volume(0.5);
+
+    // Set the default playback settings for the channel
+    let default_settings_event =
+        SfxChannel::settings_event().with_settings(PlaybackSettings::DESPAWN);
+
+    // Set the playback settings for all tracks in the channel
+    // Please do note that this will only apply to tracks that have already been individually set
+    // In this particular case it is doing nothing
+    let all_track_settings_event = SfxChannel::settings_event()
+        .with_settings(PlaybackSettings::REMOVE)
+        .all();
+
+    // Set the playback settings for a specific track in the channel
+    let track_settings_event = SfxChannel::settings_event()
+        .with_settings(PlaybackSettings::LOOP)
+        .with_track(AudioFiles::BackgroundOGG);
+
+    ew.send_batch(vec![
+        vol_event,
+        default_settings_event,
+        all_track_settings_event,
+        track_settings_event,
+    ]);
+}
+
 fn play_sfx(
     mut ew: EventWriter<PlayEvent<SfxChannel>>,
     parent_query: Query<Entity, With<SfxParent>>,
@@ -60,8 +88,9 @@ fn play_sfx(
     let player_entity = player_query.single();
     ew.send(
         SfxChannel::play_event(AudioFiles::FireOGG)
-            .with_settings(PlaybackSettings::DESPAWN)
+            .with_settings(PlaybackSettings::REMOVE)
             .with_entity(parent_entity)
+            .with_delay_mode(DelayMode::Wait)
             .as_child(),
     );
     ew.send(
