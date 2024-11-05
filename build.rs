@@ -98,16 +98,18 @@ fn main() {
                 format!(
                     r#"pub mod markers {{
     #![allow(unused)]
+
+    use bevy::ecs::component::Component;
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
-
 {}
 }}
 "#,
                     files
                         .iter()
                         .map(|f| f.get_marker_struct())
-                        .collect::<String>()
+                        .collect::<Vec<_>>()
+                        .join("\n")
                 )
                 .as_ref(),
             )
@@ -120,22 +122,25 @@ fn main() {
                     r#"
 mod ac_traits {{
     #![allow(unused)]
-    use super::{{markers::*, audio_files::*}};
+
+    use bevy::ecs::system::EntityCommands;
+
+    use super::{{audio_files::*, markers::*}};
 
     pub(crate) trait CommandAudioTracks {{
         fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
         fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut Self;
     }}
 
-    impl<'a> CommandAudioTracks for bevy::ecs::system::EntityCommands<'a> {{
-        fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
+    impl<'a> CommandAudioTracks for EntityCommands<'a> {{
+        fn insert_audio_track(&mut self, id: &AudioFiles) -> &mut EntityCommands<'a> {{
             match id {{
                 {}
                 AudioFiles::Unknown => self,
             }}
         }}
 
-        fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut bevy::ecs::system::EntityCommands<'a> {{
+        fn remove_audio_track(&mut self, id: &AudioFiles) -> &mut EntityCommands<'a> {{
             match id {{
                 {}
                 AudioFiles::Unknown => self,
@@ -148,7 +153,8 @@ mod ac_traits {{
                         .iter()
                         .map(|f| f.insert_audio_track_impl())
                         .collect::<Vec<_>>()
-                        .join("\n                "),  files
+                        .join("\n                "),
+                    files
                         .iter()
                         .map(|f| f.remove_audio_track_impl())
                         .collect::<Vec<_>>()
@@ -166,15 +172,19 @@ mod ac_traits {{
 pub mod audio_files {{
     #![allow(unused)]
     
+    use bevy::{{core::Name, log::warn}};
+    #[cfg(feature = "inspect")]
+    use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
+
     #[derive(Debug, Default)]
-    #[cfg_attr(feature = "inspect", derive(bevy::reflect::Reflect))]
+    #[cfg_attr(feature = "inspect", derive(Reflect))]
     pub struct AudioFile {{
         pub path: &'static str,
         pub duration: f32,
     }}
 
     #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
-    #[cfg_attr(feature = "inspect", derive(bevy::reflect::Reflect))]
+    #[cfg_attr(feature = "inspect", derive(Reflect))]
     pub enum AudioFiles {{
         #[default]
         Unknown,
@@ -196,9 +206,9 @@ pub mod audio_files {{
             match file_name.replace('\\', "/").as_str() {{
                 {}
                 unknown => {{
-                    bevy::log::warn!("Unknown audio file '{{}}' requested", unknown);
+                    warn!("Unknown audio file '{{}}' requested", unknown);
                     AudioFiles::Unknown
-                }},
+                }}
             }}
         }}
     }}
@@ -220,15 +230,15 @@ pub mod audio_files {{
             match file_name {{
                 {}
                 unknown => {{
-                    bevy::log::warn!("Unknown audio file '{{:?}}' requested", unknown);
+                    warn!("Unknown audio file '{{:?}}' requested", unknown);
                     "Unknown"
                 }}
             }}
         }}
     }}
 
-    impl From<&bevy::core::Name> for AudioFiles {{
-        fn from(name: &bevy::core::Name) -> Self {{
+    impl From<&Name> for AudioFiles {{
+        fn from(name: &Name) -> Self {{
             Self::from(&name.to_string())
         }}
     }}
@@ -238,31 +248,31 @@ pub mod audio_files {{
 
         pub fn get(&self) -> AudioFile {{
             match self {{
-                {}
+        {}
                 Self::Unknown => {{
-                    bevy::log::warn!("Unknown audio file requested");
+                    warn!("Unknown audio file requested");
                     AudioFile::default()
-                }},
+                }}
             }}
         }}
 
-        pub fn get_duration(&self) -> f32 {{
+        pub fn duration(&self) -> f32 {{
             match self {{
-                {}
+        {}
                 Self::Unknown => {{
-                    bevy::log::warn!("Unknown audio duration requested");
+                    warn!("Unknown audio duration requested");
                     0.0
-                }},
+                }}
             }}
         }}
 
-        pub fn get_file_name(&self) -> &'static str {{
+        pub fn path(&self) -> &'static str {{
             match self {{
-                {}
+        {}
                 Self::Unknown => {{
-                    bevy::log::warn!("Unknown audio file name requested");
+                    warn!("Unknown audio file name requested");
                     ""
-                }},
+                }}
             }}
         }}
     }}
@@ -292,22 +302,22 @@ pub mod audio_files {{
                         .iter()
                         .map(|f| f.audio_file_struct())
                         .collect::<Vec<_>>()
-                        .join("\n                "),
+                        .join("\n        "),
                     files
                         .iter()
                         .map(|f| f.get())
                         .collect::<Vec<_>>()
-                        .join("\n                "),
+                        .join("\n        "),
                     files
                         .iter()
                         .map(|f| f.get_duration())
                         .collect::<Vec<_>>()
-                        .join("\n                "),
+                        .join("\n        "),
                     files
                         .iter()
-                        .map(|f| f.get_file_name())
+                        .map(|f| f.get_path())
                         .collect::<Vec<_>>()
-                        .join("\n                "),
+                        .join("\n        "),
                 )
                 .as_ref(),
             )
@@ -320,31 +330,55 @@ pub mod audio_files {{
 mod ac_assets {{
     #![allow(unused)]
 
-    use super::audio_files::AudioFiles;
+    use bevy::{{
+        asset::{{AssetServer, Handle}},
+        audio::AudioSource,
+        ecs::system::{{Res, ResMut, Resource}},
+    }};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectResource, reflect::Reflect}};
 
-    pub(super) fn load_assets(asset_server: bevy::ecs::system::Res<bevy::asset::AssetServer>, mut internal_loader: bevy::ecs::system::ResMut<AssetLoader>) {{
-        {}
+    use super::audio_files::AudioFiles;
+
+    pub(super) fn load_assets(
+        asset_server: Res<AssetServer>,
+        mut internal_loader: ResMut<ACAssetLoader>,
+    ) {{
+{}
     }}
 
-    #[derive(Default, bevy::ecs::system::Resource)]
+    #[derive(Default, Resource)]
     #[cfg_attr(feature = "inspect", derive(Reflect))]
     #[cfg_attr(feature = "inspect", reflect(Resource))]
-    pub(super) struct AssetLoader {{
-        {}
+    pub(super) struct ACAssetLoader {{
+{}
     }}
 
-    impl AssetLoader {{
-        pub(super) fn get(&self, id: &AudioFiles) -> Option<bevy::asset::Handle<bevy::audio::AudioSource>> {{
+    impl ACAssetLoader {{
+        pub(super) fn get(&self, id: &AudioFiles) -> Option<Handle<AudioSource>> {{
             match id {{
-                {}
+{}
                 AudioFiles::Unknown => None,
             }}
         }}
     }}
 }}
-"#,files.iter().map(|f| f.asset_loader()).collect::<Vec<_>>().join("\n    "), files.iter().map(|f| f.asset_field()).collect::<Vec<_>>().join("\n    "),files.iter().map(|f| f.asset_getter()).collect::<Vec<_>>().join("\n    ")
+"#,
+                    files
+                        .iter()
+                        .map(|f| f.asset_loader())
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                    files
+                        .iter()
+                        .map(|f| f.asset_field())
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                    files
+                        .iter()
+                        .map(|f| f.asset_getter())
+                        .collect::<Vec<_>>()
+                        .join("\n")
                 )
                 .as_ref(),
             )
@@ -422,15 +456,12 @@ impl AudioFile {
 
     fn asset_field(&self) -> String {
         let field_name = self.snake_case();
-        format!(
-            r#"        pub(super) {}: bevy::asset::Handle<bevy::audio::AudioSource>,"#,
-            field_name
-        )
+        format!(r#"        pub(super) {}: Handle<AudioSource>,"#, field_name)
     }
 
     fn asset_loader(&self) -> String {
         format!(
-            r#"        internal_loader.{} = asset_server.load(AudioFiles::{}.get_file_name());"#,
+            r#"        internal_loader.{} = asset_server.load(AudioFiles::{}.path());"#,
             self.snake_case(),
             self.pascal_case()
         )
@@ -446,7 +477,7 @@ impl AudioFile {
 
     fn get(&self) -> String {
         format!(
-            "        Self::{} =>  Self::{},",
+            "        Self::{} => Self::{},",
             self.pascal_case(),
             self.snake_case().to_uppercase(),
         )
@@ -454,15 +485,15 @@ impl AudioFile {
 
     fn get_duration(&self) -> String {
         format!(
-            "        Self::{} =>  Self::{}.duration,",
+            "        Self::{} => Self::{}.duration,",
             self.pascal_case(),
             self.snake_case().to_uppercase(),
         )
     }
 
-    fn get_file_name(&self) -> String {
+    fn get_path(&self) -> String {
         format!(
-            "        Self::{} =>  Self::{}.path,",
+            "        Self::{} => Self::{}.path,",
             self.pascal_case(),
             self.snake_case().to_uppercase(),
         )
@@ -470,7 +501,10 @@ impl AudioFile {
 
     fn audio_file_struct(&self) -> String {
         format!(
-            "    pub const {}: AudioFile = AudioFile {{ path: {:?}, duration: {} }};",
+            "const {}: AudioFile = AudioFile {{
+            path: {:?},
+            duration: {},
+        }};",
             self.snake_case().to_uppercase(),
             self.path,
             self.duration
@@ -486,11 +520,10 @@ impl AudioFile {
     /// This is not meant to be inserted or spawned directly outside of the plugin internals
     /// 
     /// Only use them for querying
-    #[derive(Debug, bevy::ecs::component::Component, Default)]
+    #[derive(Debug, Component, Default)]
     #[cfg_attr(feature = "inspect", derive(Reflect))]
     #[cfg_attr(feature = "inspect", reflect(Component))]
-    pub struct {};
-"#,
+    pub struct {};"#,
             self.path, struct_name,
         )
     }
