@@ -8,55 +8,60 @@ use bevy::{
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
+use crate::prelude::DelayMode;
+
 use super::audio_files::AudioFiles;
 
 #[derive(Default, Resource)]
 #[cfg_attr(feature = "inspect", derive(Reflect))]
 #[cfg_attr(feature = "inspect", reflect(Resource))]
-pub struct ChannelSettings<T: Component + Default> {
-    volume: Mutex<Volume>,
+pub struct ChannelSettings<Channel: Component + Default> {
+    channel_volume: Mutex<Volume>,
+    track_settings: HashMap<AudioFiles, PlaybackSettings>,
+    default_settings: PlaybackSettings,
+    default_delay_mode: DelayMode,
     #[cfg_attr(feature = "inspect", reflect(ignore))]
-    _marker: PhantomData<T>,
+    _marker: PhantomData<Channel>,
 }
 
 impl<T: Component + Default> ChannelSettings<T> {
-    pub fn get_volume(&self) -> f32 {
-        self.volume.lock().unwrap().get()
+    pub fn get_channel_volume(&self) -> f32 {
+        self.channel_volume.lock().unwrap().get()
     }
 
-    pub(super) fn set_volume(&self, volume: f32) {
-        *self.volume.lock().unwrap() = Volume::new(volume);
+    pub(super) fn set_channel_volume(&self, volume: f32) {
+        *self.channel_volume.lock().unwrap() = Volume::new(volume);
     }
-}
 
-#[derive(Default, Resource)]
-#[cfg_attr(feature = "inspect", derive(Reflect))]
-#[cfg_attr(feature = "inspect", reflect(Resource))]
-pub struct TrackSettings<T: Component + Default> {
-    track_map: HashMap<AudioFiles, PlaybackSettings>,
-    default: PlaybackSettings,
-    #[cfg_attr(feature = "inspect", reflect(ignore))]
-    _marker: PhantomData<T>,
-}
-
-impl<T: Component + Default> TrackSettings<T> {
     pub fn get_track_setting(&self, id: &AudioFiles) -> PlaybackSettings {
-        self.track_map
+        self.track_settings
             .get(id)
-            .map_or(self.default, |settings| settings.clone())
+            .map_or(self.default_settings, |settings| settings.clone())
     }
 
-    pub(super) fn set(&mut self, id: AudioFiles, settings: PlaybackSettings) {
-        self.track_map.insert(id, settings);
+    pub(super) fn set_track_settings(&mut self, id: AudioFiles, settings: PlaybackSettings) {
+        self.track_settings.insert(id, settings);
     }
 
-    pub(super) fn set_all(&mut self, settings: PlaybackSettings) {
-        for (_, track) in self.track_map.iter_mut() {
+    pub(super) fn set_all_track_settings(&mut self, settings: PlaybackSettings) {
+        for (_, track) in self.track_settings.iter_mut() {
             *track = settings.clone();
         }
     }
 
-    pub(super) fn set_default(&mut self, settings: PlaybackSettings) {
-        self.default = settings;
+    pub fn get_default_settings(&self) -> PlaybackSettings {
+        self.default_settings.clone()
+    }
+
+    pub(super) fn set_default_settings(&mut self, settings: PlaybackSettings) {
+        self.default_settings = settings;
+    }
+
+    pub fn get_default_delay_mode(&self) -> DelayMode {
+        self.default_delay_mode
+    }
+
+    pub(super) fn set_default_delay_mode(&mut self, delay_mode: DelayMode) {
+        self.default_delay_mode = delay_mode;
     }
 }

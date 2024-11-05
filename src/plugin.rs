@@ -11,11 +11,11 @@ use bevy::{
     },
 };
 
-use crate::prelude::AudioFiles;
-
-use super::{
+use crate::{
     ac_assets::{load_assets, AssetLoader},
+    audio_files::AudioFiles,
     channel::ChannelRegistration,
+    global_channel::GlobalChannel,
 };
 
 pub struct AudioControllerPlugin;
@@ -23,7 +23,7 @@ pub struct AudioControllerPlugin;
 impl Plugin for AudioControllerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AssetLoader>()
-            .register_audio_channel::<GlobalAudioChannel>()
+            .register_audio_channel::<GlobalChannel>()
             .add_systems(Startup, load_assets)
             .add_systems(
                 Update,
@@ -32,22 +32,8 @@ impl Plugin for AudioControllerPlugin {
     }
 }
 
-#[derive(Default, Component)]
-#[cfg_attr(feature = "inspect", derive(Reflect))]
-#[cfg_attr(feature = "inspect", reflect(Component))]
-pub struct GlobalAudioChannel;
-
 #[derive(Component)]
 pub(super) struct HasChannel;
-
-#[derive(Component, Default, PartialEq, Eq, Hash, Copy, Clone)]
-pub enum DelayMode {
-    #[default]
-    Immediate,
-    Wait,
-    Percent(i32),
-    Milliseconds(i32),
-}
 
 fn assign_rogue_sink_to_global(
     mut commands: Commands,
@@ -57,7 +43,7 @@ fn assign_rogue_sink_to_global(
         if has_channel.is_some() {
             commands.entity(entity).remove::<HasChannel>();
         } else {
-            commands.entity(entity).insert(GlobalAudioChannel);
+            commands.entity(entity).insert(GlobalChannel);
         }
     }
 }
@@ -70,7 +56,7 @@ fn assign_rogue_audio_to_global(
         if not_global.is_some() {
             commands.entity(entity).remove::<HasChannel>();
         } else {
-            commands.entity(entity).insert(GlobalAudioChannel);
+            commands.entity(entity).insert(GlobalChannel);
         }
     }
 }

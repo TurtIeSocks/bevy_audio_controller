@@ -1,8 +1,12 @@
 use ac_traits::CommandAudioTracks;
 
 // mod bounds;
+pub mod audio_channel;
 pub mod channel;
+pub mod delay_mode;
 pub mod events;
+pub mod global_channel;
+mod helpers;
 pub mod plugin;
 pub mod resources;
 
@@ -15,11 +19,11 @@ impl bevy::ecs::component::Component for audio_files::AudioFiles {
     fn register_component_hooks(_hooks: &mut bevy::ecs::component::ComponentHooks) {
         _hooks.on_add(|mut world, entity, _| {
             let val = world.get::<Self>(entity).unwrap().clone();
-            if world.get::<plugin::DelayMode>(entity).is_none() {
+            if world.get::<delay_mode::DelayMode>(entity).is_none() {
                 world
                     .commands()
                     .entity(entity)
-                    .insert(plugin::DelayMode::default())
+                    .insert(delay_mode::DelayMode::default())
                     .insert_audio_track(&val);
             }
             if world.get::<bevy::core::Name>(entity).is_none() {
@@ -32,11 +36,11 @@ impl bevy::ecs::component::Component for audio_files::AudioFiles {
 
         _hooks.on_remove(|mut world, entity, _| {
             let val = world.get::<Self>(entity).unwrap().clone();
-            if world.get::<plugin::DelayMode>(entity).is_none() {
+            if world.get::<delay_mode::DelayMode>(entity).is_none() {
                 world
                     .commands()
                     .entity(entity)
-                    .remove::<plugin::DelayMode>()
+                    .remove::<delay_mode::DelayMode>()
                     .remove_audio_track(&val);
             }
         });
@@ -44,9 +48,12 @@ impl bevy::ecs::component::Component for audio_files::AudioFiles {
 }
 
 pub mod prelude {
+    pub use super::audio_channel::AudioChannel;
     pub use super::audio_files::AudioFiles;
     pub use super::channel::*;
+    pub use super::delay_mode::*;
     pub use super::events::*;
+    pub use super::global_channel::*;
     pub use super::markers::*;
     pub use super::plugin::*;
     pub use super::resources::*;

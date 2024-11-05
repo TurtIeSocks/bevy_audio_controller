@@ -5,9 +5,7 @@ use bevy::{
     ecs::{component::Component, entity::Entity, event::Event},
 };
 
-pub use bevy_audio_controller_derive::AudioChannel;
-
-use crate::{audio_files::AudioFiles, plugin::DelayMode};
+use crate::{audio_files::AudioFiles, delay_mode::DelayMode};
 
 #[derive(Event)]
 pub struct PlayEvent<T: Component + Default> {
@@ -63,53 +61,55 @@ impl<Channel: Component + Default> From<AudioFiles> for PlayEvent<Channel> {
 }
 
 #[derive(Event)]
-pub struct VolumeEvent<Channel: Component + Default> {
-    pub(super) volume: f32,
+pub struct SettingsEvent<Channel: Component + Default> {
+    pub(super) settings: Option<PlaybackSettings>,
+    pub(super) volume: Option<f32>,
+    pub(super) track: Option<AudioFiles>,
+    pub(super) delay_mode: Option<DelayMode>,
+    pub(super) all: bool,
     _marker: PhantomData<Channel>,
 }
 
-impl<Channel: Component + Default> VolumeEvent<Channel> {
-    pub fn new(volume: f32) -> Self {
+impl<Channel: Component + Default> SettingsEvent<Channel> {
+    pub fn new() -> Self {
         Self {
-            volume,
+            track: None,
+            settings: None,
+            volume: None,
+            delay_mode: None,
+            all: false,
             _marker: PhantomData::<Channel>,
         }
     }
-}
 
-#[derive(Event)]
-pub struct TrackEvent<Channel: Component + Default> {
-    pub(super) id: Option<AudioFiles>,
-    pub(super) settings: PlaybackSettings,
-    _marker: PhantomData<Channel>,
-}
-
-impl<Channel: Component + Default> TrackEvent<Channel> {
-    pub fn new(settings: PlaybackSettings) -> Self {
-        Self {
-            id: None,
-            settings,
-            _marker: PhantomData::<Channel>,
-        }
+    pub fn with_settings(mut self, settings: PlaybackSettings) -> Self {
+        self.settings = Some(settings);
+        self
     }
 
     pub fn with_track(mut self, id: AudioFiles) -> Self {
-        self.id = Some(id);
+        if self.all {
+            panic!("Do set all and a specific track at the same time, either call `all()` or `with_track()`");
+        }
+        self.track = Some(id);
         self
     }
-}
 
-#[derive(Event)]
-pub struct DefaultSettingsEvent<Channel: Component + Default> {
-    pub(super) settings: PlaybackSettings,
-    _marker: PhantomData<Channel>,
-}
+    pub fn with_volume(mut self, volume: f32) -> Self {
+        self.volume = Some(volume);
+        self
+    }
 
-impl<Channel: Component + Default> DefaultSettingsEvent<Channel> {
-    pub fn new(settings: PlaybackSettings) -> Self {
-        Self {
-            settings,
-            _marker: PhantomData::<Channel>,
+    pub fn all(mut self) -> Self {
+        if self.track.is_some() {
+            panic!("Do set all and a specific track at the same time, either call `all()` or `with_track()`");
         }
+        self.all = true;
+        self
+    }
+
+    pub fn with_delay_mode(mut self, delay_mode: DelayMode) -> Self {
+        self.delay_mode = Some(delay_mode);
+        self
     }
 }

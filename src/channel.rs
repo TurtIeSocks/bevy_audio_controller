@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use bevy::{
     app::{PostUpdate, Update},
     audio::{AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
@@ -24,9 +22,12 @@ use crate::{
     ac_assets::AssetLoader,
     ac_traits::CommandAudioTracks,
     audio_files::AudioFiles,
-    events::{DefaultSettingsEvent, PlayEvent, TrackEvent, VolumeEvent},
-    plugin::{DelayMode, GlobalAudioChannel, HasChannel},
-    resources::{ChannelSettings, TrackSettings},
+    delay_mode::DelayMode,
+    events::{PlayEvent, SettingsEvent},
+    global_channel::GlobalChannel,
+    helpers,
+    plugin::HasChannel,
+    resources::ChannelSettings,
 };
 
 pub trait ChannelRegistration {
@@ -42,20 +43,14 @@ impl ChannelRegistration for bevy::app::App {
             });
 
         self.add_event::<PlayEvent<Channel>>()
-            .add_event::<VolumeEvent<Channel>>()
-            .add_event::<TrackEvent<Channel>>()
-            .add_event::<DefaultSettingsEvent<Channel>>()
+            .add_event::<SettingsEvent<Channel>>()
             .init_resource::<ChannelSettings<Channel>>()
-            .init_resource::<TrackSettings<Channel>>()
             .add_systems(
                 Update,
                 (
                     ecs_system::<Channel>,
                     update_volume_on_insert::<Channel>,
-                    volume_event_reader::<Channel>.run_if(on_event::<VolumeEvent<Channel>>()),
-                    track_event_reader::<Channel>.run_if(on_event::<TrackEvent<Channel>>()),
-                    default_settings_reader::<Channel>
-                        .run_if(on_event::<DefaultSettingsEvent<Channel>>()),
+                    settings_event_reader::<Channel>.run_if(on_event::<SettingsEvent<Channel>>()),
                     update_track_volumes::<Channel>
                         .run_if(resource_changed::<ChannelSettings<Channel>>),
                 ),
@@ -72,10 +67,10 @@ impl ChannelRegistration for bevy::app::App {
 
 fn update_track_volumes<Channel: Component + Default>(
     channel: Res<ChannelSettings<Channel>>,
-    global: Res<ChannelSettings<GlobalAudioChannel>>,
+    global: Res<ChannelSettings<GlobalChannel>>,
     track_query: Query<&AudioSink, With<Channel>>,
 ) {
-    let volume = get_normalized_volume(channel, global);
+    let volume = helpers::get_normalized_volume(channel, global);
     for sink in track_query.iter() {
         sink.set_volume(volume);
     }
@@ -83,44 +78,12 @@ fn update_track_volumes<Channel: Component + Default>(
 
 fn update_volume_on_insert<Channel: Component + Default>(
     channel: Res<ChannelSettings<Channel>>,
-    global: Res<ChannelSettings<GlobalAudioChannel>>,
+    global: Res<ChannelSettings<GlobalChannel>>,
     sink_query: Query<&AudioSink, (Added<AudioSink>, With<Channel>)>,
 ) {
-    let volume = get_normalized_volume(channel, global);
+    let volume = helpers::get_normalized_volume(channel, global);
     for sink in sink_query.iter() {
         sink.set_volume(sink.volume() * volume);
-    }
-}
-
-fn volume_event_reader<Channel: Component + Default>(
-    channel_settings: Res<ChannelSettings<Channel>>,
-    mut events: EventReader<VolumeEvent<Channel>>,
-) {
-    for event in events.read() {
-        channel_settings.set_volume(event.volume);
-    }
-    let _ = channel_settings.deref();
-}
-
-fn track_event_reader<Channel: Component + Default>(
-    mut track_settings: ResMut<TrackSettings<Channel>>,
-    mut events: EventReader<TrackEvent<Channel>>,
-) {
-    for event in events.read() {
-        if let Some(id) = event.id {
-            track_settings.set(id, event.settings);
-        } else {
-            track_settings.set_all(event.settings);
-        }
-    }
-}
-
-fn default_settings_reader<Channel: Component + Default>(
-    mut track_settings: ResMut<TrackSettings<Channel>>,
-    mut events: EventReader<DefaultSettingsEvent<Channel>>,
-) {
-    for event in events.read() {
-        track_settings.set_default(event.settings);
     }
 }
 
@@ -165,7 +128,7 @@ fn play_event_reader<Channel: Component + Default>(
     asset_loader: Res<AssetLoader>,
     mut events: EventReader<PlayEvent<Channel>>,
     channel_query: Query<(&AudioFiles, &AudioSink), With<Channel>>,
-    track_settings: Res<TrackSettings<Channel>>,
+    channel_settings: Res<ChannelSettings<Channel>>,
 ) {
     let mut is_playing = channel_query
         .iter()
@@ -184,12 +147,12 @@ fn play_event_reader<Channel: Component + Default>(
         let settings = if let Some(event_settings) = event.settings {
             event_settings
         } else {
-            track_settings.get_track_setting(&event.id)
+            channel_settings.get_track_setting(&event.id)
         };
         let delay_mode = if let Some(mode) = event.delay_mode {
             mode
         } else {
-            DelayMode::Wait
+            channel_settings.get_default_delay_mode()
         };
         if delay_mode == DelayMode::Immediate || !is_playing.contains(&event.id) {
             is_playing.insert(&event.id);
@@ -225,9 +188,25 @@ fn play_event_reader<Channel: Component + Default>(
     }
 }
 
-fn get_normalized_volume<Channel: Component + Default>(
-    channel: Res<ChannelSettings<Channel>>,
-    global: Res<ChannelSettings<GlobalAudioChannel>>,
-) -> f32 {
-    channel.get_volume() * global.get_volume()
+fn settings_event_reader<Channel: Component + Default>(
+    mut channel_settings: ResMut<ChannelSettings<Channel>>,
+    mut events: EventReader<SettingsEvent<Channel>>,
+) {
+    for event in events.read() {
+        if let Some(delay_mode) = event.delay_mode {
+            channel_settings.set_default_delay_mode(delay_mode);
+        }
+        if let Some(volume) = event.volume {
+            channel_settings.set_channel_volume(volume);
+        }
+        if let Some(settings) = event.settings {
+            if let Some(id) = event.track {
+                channel_settings.set_track_settings(id, settings);
+            } else if event.all {
+                channel_settings.set_all_track_settings(settings);
+            } else {
+                channel_settings.set_default_settings(settings);
+            }
+        }
+    }
 }

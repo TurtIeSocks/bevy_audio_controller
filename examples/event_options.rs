@@ -59,13 +59,13 @@ fn play_sfx(
     let parent_entity = parent_query.single();
     let player_entity = player_query.single();
     ew.send(
-        SfxChannel::new_play_event(AudioFiles::FireOGG)
+        SfxChannel::play_event(AudioFiles::FireOGG)
             .with_settings(PlaybackSettings::DESPAWN)
             .with_entity(parent_entity)
             .as_child(),
     );
     ew.send(
-        SfxChannel::new_play_event("spray.ogg".into())
+        SfxChannel::play_event("spray.ogg".into())
             .with_settings(PlaybackSettings::REMOVE)
             .with_entity(player_entity),
     );
@@ -73,7 +73,7 @@ fn play_sfx(
 
 fn force_play(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
     ew.send(
-        SfxChannel::new_play_event(AudioFiles::FireOGG)
+        SfxChannel::play_event(AudioFiles::FireOGG)
             .with_delay_mode(DelayMode::Immediate)
             .with_settings(PlaybackSettings::DESPAWN),
     );
