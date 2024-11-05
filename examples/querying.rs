@@ -28,8 +28,15 @@ fn setup(mut commands: Commands) {
 }
 
 fn play_sfx(mut commands: Commands) {
-    commands.spawn((AudioFiles::FireOGG, PlaybackSettings::DESPAWN));
-    commands.spawn((AudioFiles::SprayOGG, PlaybackSettings::DESPAWN, SfxChannel));
+    commands.spawn((
+        AudioFiles::FireOGG,
+        PlaybackSettings::DESPAWN.with_speed(2.0),
+    ));
+    commands.spawn((
+        AudioFiles::SprayOGG,
+        PlaybackSettings::DESPAWN.with_speed(0.5),
+        SfxChannel,
+    ));
 }
 
 // This system will run after the `AudioSink` components have been added to any entities on the `SfxChannel`
@@ -49,15 +56,10 @@ fn do_something_with_sfx(
 
 // This system will run after the `AudioSink` components have been added to any `FireOGG` entities
 fn do_something_with_fire(
-    sfx_query: Query<(Entity, &Name, &AudioSink), (Added<AudioSink>, With<FireOGG>)>,
+    mut sfx_query: Query<(Entity, &Name, &mut AudioSink), (Added<AudioSink>, With<FireOGG>)>,
 ) {
-    for (entity, name, sink) in sfx_query.iter() {
+    for (entity, name, mut sink) in sfx_query.iter_mut() {
         sink.set_speed(1.25);
-        info!(
-            "Fire: {} ({}) is playing at speed {}",
-            name,
-            entity,
-            sink.speed()
-        );
+        warn!("{}: is playing at speed {}", entity, sink.speed());
     }
 }

@@ -51,6 +51,7 @@ impl ChannelRegistration for App {
                 (
                     tick_audio_cache::<Channel>,
                     ecs_system::<Channel>,
+                    // update_internal_timer_on_speed_change::<Channel>,
                     update_volume_on_insert::<Channel>,
                     settings_event_reader::<Channel>.run_if(on_event::<SettingsEvent<Channel>>()),
                     update_track_volumes::<Channel>
@@ -102,6 +103,17 @@ fn update_volume_on_insert<Channel: ACBounds>(
         sink.set_volume(new_volume);
     }
 }
+
+// fn update_internal_timer_on_speed_change<Channel: ACBounds>(
+//     sink_query: Query<(Entity, &AudioSink), (Changed<AudioSink>, With<Channel>)>,
+//     settings: Res<ChannelSettings<Channel>>,
+//     mut settings_ew: EventWriter<SettingsEvent<Channel>>,
+// ) {
+//     for (entity, sink) in sink_query.iter() {
+//         bevy::log::info!("{}: speed changed to {}", entity, sink.speed());
+//         // settings_ew.send(SettingsEvent::new().with_speed(sink.speed));
+//     }
+// }
 
 fn ecs_system<Channel: ACBounds>(
     query: Query<
@@ -160,7 +172,7 @@ fn play_event_reader<Channel: ACBounds>(
         let can_play = audio_cache.can_play(&event.id);
         if delay_mode == DelayMode::Immediate || can_play {
             if can_play {
-                let next_delay = delay_mode.get_delay(event.id.duration());
+                let next_delay = delay_mode.get_delay(event.id.duration() / settings.speed);
                 audio_cache.set_entry(event.id, next_delay);
             }
             if let Some(handler) = asset_loader.get(&event.id) {
