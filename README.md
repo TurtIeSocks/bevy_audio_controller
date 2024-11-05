@@ -46,7 +46,6 @@ type SfxEvent = AudioEvent<SfxChannel>;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        // Add the plugin to the app, since it is generic, you can add as many channels as you want
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
         .add_systems(Update, play_fire)
