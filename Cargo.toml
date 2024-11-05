@@ -42,11 +42,12 @@ all-codecs = ["flac", "mp3", "ogg", "wav"]
 
 
 [dependencies]
+bevy_audio_controller_derive = { path = "./macros", version = "0.1.0" }
+
 bevy = { version = "0.14", default-features = false, features = [
   "bevy_audio",
   "bevy_asset",
 ] }
-bevy_audio_controller_derive = { path = "./macros" }
 
 [build-dependencies]
 symphonia = { version = "0.5", default-features = false }
