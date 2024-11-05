@@ -3,7 +3,7 @@
 <!--
 [![license](https://img.shields.io/crates/l/bevy_audio_controller)](https://github.com/TurtIeSocks/bevy_audio_controller#license) -->
 
-An extremely convenient plugin that provides a solid audio implementation for Bevy with very minimal boilerplate!
+An extremely convenient plugin that provides a solid audio controller for Bevy with very minimal boilerplate!
 
 ## Features
 
