@@ -9,12 +9,8 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
-#[derive(Component, Default)]
-struct SfxChannel;
-
-/// Type alias for the SFX audio event to minimize boilerplate
-type SfxPlayEvent = PlayEvent<SfxChannel>;
-type SfxTrackEvent = TrackEvent<SfxChannel>;
+#[derive(Component, Default, AudioChannel)]
+struct SFX;
 
 fn main() {
     App::new()
@@ -24,7 +20,7 @@ fn main() {
         }))
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
-        .register_audio_channel::<SfxChannel>()
+        .register_audio_channel::<SFX>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -37,7 +33,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut sfx_track_ew: EventWriter<SfxTrackEvent>) {
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(helpers::get_container())
@@ -46,13 +42,12 @@ fn setup(mut commands: Commands, mut sfx_track_ew: EventWriter<SfxTrackEvent>) {
                 "Press SPACE to toggle between\nplugin and non-plugin audio",
             ));
         });
-
-    sfx_track_ew
-        .send(SfxTrackEvent::new(PlaybackSettings::DESPAWN).with_track(AudioFiles::FireOGG));
 }
 
-fn play_with_plugin(mut sfx_play_ew: EventWriter<SfxPlayEvent>) {
-    sfx_play_ew.send(SfxPlayEvent::new(AudioFiles::FireOGG));
+// `SFXPlayEvent` is derived from the `AudioChannel` trait
+fn play_with_plugin(mut sfx_play_ew: EventWriter<SFXPlayEvent>) {
+    sfx_play_ew
+        .send(SFXPlayEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN));
     // You can send events using the enum values or a string
     // ew.send(SfxPlayEvent::new("fire.ogg".into()));
 }

@@ -43,8 +43,8 @@ pub(super) struct HasChannel;
 #[derive(Component, Default, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum DelayMode {
     #[default]
-    Wait,
     Immediate,
+    Wait,
     Percent(i32),
     Milliseconds(i32),
 }

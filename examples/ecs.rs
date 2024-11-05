@@ -41,8 +41,11 @@ fn setup(mut commands: Commands) {
 }
 
 fn wait_mode(mut commands: Commands) {
-    // By default, `DelayMode::Wait` will be used if it's omitted
-    commands.spawn((AudioFiles::FireOGG, PlaybackSettings::DESPAWN));
+    commands.spawn((
+        AudioFiles::FireOGG,
+        PlaybackSettings::DESPAWN,
+        DelayMode::Wait,
+    ));
     commands.spawn((
         AudioFiles::SprayOGG,
         PlaybackSettings::DESPAWN,
@@ -54,6 +57,7 @@ fn immediate_mode(mut commands: Commands) {
     commands.spawn((
         AudioFiles::FireOGG,
         PlaybackSettings::DESPAWN,
-        DelayMode::Immediate,
+        // By default, `DelayMode::Immediate` will be used if it's omitted
+        // DelayMode::Immediate,
     ));
 }
