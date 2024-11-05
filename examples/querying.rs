@@ -3,7 +3,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, AudioChannel)]
 struct SfxChannel;
 
 fn main() {

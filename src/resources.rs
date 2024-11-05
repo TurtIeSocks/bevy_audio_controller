@@ -44,7 +44,7 @@ impl<T: Component + Default> ChannelSettings<T> {
     }
 
     pub(super) fn set_all_track_settings(&mut self, settings: PlaybackSettings) {
-        for (_, track) in self.track_settings.iter_mut() {
+        for track in self.track_settings.values_mut() {
             *track = settings.clone();
         }
     }

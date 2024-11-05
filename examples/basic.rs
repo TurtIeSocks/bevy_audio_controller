@@ -9,9 +9,6 @@ use bevy_audio_controller::prelude::*;
 
 mod helpers;
 
-#[derive(Component, Default, AudioChannel)]
-struct SFX;
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
@@ -20,7 +17,6 @@ fn main() {
         }))
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
-        .register_audio_channel::<SFX>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -44,8 +40,8 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn play_with_plugin(mut sfx_play_ew: EventWriter<PlayEvent<SFX>>) {
-    let event = SFX::play_event(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
+fn play_with_plugin(mut sfx_play_ew: EventWriter<GlobalPlayEvent>) {
+    let event = GlobalPlayEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
     sfx_play_ew.send(event);
     // You can send events using the enum values or a string
     // ew.send(SfxPlayEvent::new("fire.ogg".into()));

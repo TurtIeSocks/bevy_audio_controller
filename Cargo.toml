@@ -26,8 +26,9 @@ symphonia = { version = "0.5", default-features = false }
 cargo-emit = "0.2.1"
 
 [features]
+# Dev mode
 default = ["all-codecs"]
-
+# default = []
 inspect = []
 
 # Pass features to symphonia
