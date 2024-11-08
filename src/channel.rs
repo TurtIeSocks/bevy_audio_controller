@@ -1,6 +1,6 @@
 use bevy::{
     app::{App, PostUpdate, Update},
-    audio::{AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
+    audio::{AudioPlayer, AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
     ecs::{
         entity::Entity,
         event::{EventReader, EventWriter},
@@ -53,7 +53,7 @@ impl ChannelRegistration for App {
                     ecs_system::<Channel>,
                     // update_internal_timer_on_speed_change::<Channel>,
                     update_volume_on_insert::<Channel>,
-                    settings_event_reader::<Channel>.run_if(on_event::<SettingsEvent<Channel>>()),
+                    settings_event_reader::<Channel>.run_if(on_event::<SettingsEvent<Channel>>),
                     update_track_volumes::<Channel>
                         .run_if(resource_changed::<ChannelSettings<Channel>>),
                 ),
@@ -62,7 +62,7 @@ impl ChannelRegistration for App {
                 PostUpdate,
                 (
                     remove_audio_components::<Channel>,
-                    play_event_reader::<Channel>.run_if(on_event::<PlayEvent<Channel>>()),
+                    play_event_reader::<Channel>.run_if(on_event::<PlayEvent<Channel>>),
                 ),
             );
 
@@ -176,7 +176,12 @@ fn play_event_reader<Channel: ACBounds>(
                 audio_cache.set_entry(event.id, next_delay);
             }
             if let Some(handler) = asset_loader.get(&event.id) {
-                let bundle = (handler, settings, event.id, Channel::default());
+                let bundle = (
+                    AudioPlayer::new(handler),
+                    settings,
+                    event.id,
+                    Channel::default(),
+                );
                 if let Some(dest_entity) = event.entity {
                     if event.child {
                         let child = commands.spawn(bundle).id();
