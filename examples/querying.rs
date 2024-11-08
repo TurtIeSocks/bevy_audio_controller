@@ -1,5 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
@@ -14,7 +14,7 @@ fn main() {
             filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(WorldInspectorPlugin::new())
+        // .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
         .add_systems(Startup, setup)
@@ -24,7 +24,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 }
 
 fn play_sfx(mut commands: Commands) {
@@ -56,10 +56,15 @@ fn do_something_with_sfx(
 
 // This system will run after the `AudioSink` components have been added to any `FireOGG` entities
 fn do_something_with_fire(
-    mut sfx_query: Query<(Entity, &Name, &mut AudioSink), (Added<AudioSink>, With<FireOGG>)>,
+    sfx_query: Query<(Entity, &Name, &AudioSink), (Added<AudioSink>, With<FireOGG>)>,
 ) {
-    for (entity, name, mut sink) in sfx_query.iter_mut() {
+    for (entity, name, sink) in sfx_query.iter() {
         sink.set_speed(1.25);
-        warn!("{}: is playing at speed {}", entity, sink.speed());
+        warn!(
+            "{}: ({}) is playing at speed {}",
+            name,
+            entity,
+            sink.speed()
+        );
     }
 }

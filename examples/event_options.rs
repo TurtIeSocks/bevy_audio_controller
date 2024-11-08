@@ -1,5 +1,5 @@
 use bevy::{input::common_conditions::input_just_pressed, log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
@@ -22,7 +22,7 @@ fn main() {
             filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(WorldInspectorPlugin::new())
+        // .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
         .add_systems(Startup, (setup, set_channel_settings))
@@ -39,7 +39,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn((Name::new("SFX Container"), SfxParent));
     commands.spawn((Name::new("Player"), Player));
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 
     commands
         .spawn(helpers::get_container())

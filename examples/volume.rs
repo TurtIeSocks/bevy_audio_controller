@@ -1,5 +1,5 @@
 use bevy::{color::palettes::tailwind, ecs::system::EntityCommands, log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
@@ -19,7 +19,7 @@ fn main() {
             filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(WorldInspectorPlugin::new())
+        // .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<MusicChannel>()
         .register_audio_channel::<SfxChannel>()
@@ -70,19 +70,19 @@ fn volume_buttons<Channel: ACBounds>(
 }
 
 fn volume_label<Channel: ACBounds>(
-    mut text_query: Query<&mut Text, (With<VolumeLabel>, With<Channel>)>,
+    mut text_query: Query<&mut TextSpan, (With<VolumeLabel>, With<Channel>)>,
     settings: Res<ChannelSettings<Channel>>,
 ) {
     for mut text in &mut text_query {
-        text.sections[0].value = format!("{:.0}%", settings.get_channel_volume() * 100.0);
+        **text = format!("{:.0}%", settings.get_channel_volume() * 100.0);
     }
 }
 
 fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     commands
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -91,9 +91,8 @@ fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
                 row_gap: Val::Px(5.),
                 ..default()
             },
-            z_index: ZIndex::Global(25),
-            ..default()
-        })
+            GlobalZIndex(25),
+        ))
         .with_children(|parent| {
             build_row(parent).with_children(|parent| {
                 build_header(parent, "Global Volume");
@@ -138,17 +137,14 @@ fn play_sfx(
 
 fn build_header(parent: &mut ChildBuilder, text: &str) {
     parent
-        .spawn(NodeBundle {
-            style: Style {
-                padding: UiRect::top(Val::Px(20.0)),
-                ..default()
-            },
+        .spawn(Node {
+            padding: UiRect::top(Val::Px(20.0)),
             ..default()
         })
         .with_children(|p| {
-            p.spawn(TextBundle::from_section(
-                text.to_string(),
-                TextStyle {
+            p.spawn((
+                Text::new(text),
+                TextFont {
                     font_size: TEXT_SIZE,
                     ..default()
                 },
@@ -157,13 +153,10 @@ fn build_header(parent: &mut ChildBuilder, text: &str) {
 }
 
 fn build_row<'a>(parent: &'a mut ChildBuilder) -> EntityCommands<'a> {
-    parent.spawn(NodeBundle {
-        style: Style {
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            column_gap: Val::Px(5.),
-            ..default()
-        },
+    parent.spawn(Node {
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::Center,
+        column_gap: Val::Px(5.),
         ..default()
     })
 }
@@ -176,27 +169,24 @@ fn build_audio_row<Channel: ACBounds>(parent: &mut ChildBuilder) {
 
 fn build_label(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
     parent
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 width: Val::Px(150.0),
                 height: Val::Px(50.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..default()
             },
-            border_radius: BorderRadius::all(Val::Px(5.)),
-            background_color: LABEL_BACKGROUND.into(),
-            ..default()
-        })
+            BorderRadius::all(Val::Px(5.)),
+            BackgroundColor(LABEL_BACKGROUND.into()),
+        ))
         .with_children(|parent| {
             parent.spawn((
-                TextBundle::from_section(
-                    format!("{}%", text),
-                    TextStyle {
-                        font_size: TEXT_SIZE,
-                        ..default()
-                    },
-                ),
+                Text::new(format!("{}%", text)),
+                TextFont {
+                    font_size: TEXT_SIZE,
+                    ..default()
+                },
                 marker,
             ));
         });
@@ -205,23 +195,21 @@ fn build_label(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
 fn build_button(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
     parent
         .spawn((
-            ButtonBundle {
-                style: Style {
-                    width: Val::Px(50.0),
-                    height: Val::Px(50.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                border_radius: BorderRadius::all(Val::Px(5.)),
+            Button,
+            Node {
+                width: Val::Px(50.0),
+                height: Val::Px(50.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             },
+            BorderRadius::all(Val::Px(5.)),
             marker,
         ))
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                text.to_string(),
-                TextStyle {
+        .with_children(|parent: &mut ChildBuilder<'_>| {
+            parent.spawn((
+                Text::new(text),
+                TextFont {
                     font_size: TEXT_SIZE,
                     ..default()
                 },
