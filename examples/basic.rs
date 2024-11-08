@@ -1,10 +1,9 @@
 use bevy::{
-    audio::PlaybackMode,
     input::common_conditions::{input_just_pressed, input_toggle_active},
     log::LogPlugin,
     prelude::*,
 };
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
@@ -16,7 +15,7 @@ fn main() {
             filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(WorldInspectorPlugin::new())
+        // .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .add_systems(Startup, setup)
         .add_systems(
@@ -31,7 +30,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     commands
         .spawn(helpers::get_container())
         .with_children(|parent| {
@@ -50,12 +49,8 @@ fn play_with_plugin(mut sfx_play_ew: EventWriter<GlobalPlayEvent>) {
 }
 
 fn play_without_plugin(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(AudioBundle {
-        settings: PlaybackSettings {
-            mode: PlaybackMode::Despawn,
-            ..Default::default()
-        },
-        source: asset_server.load("fire.ogg"),
-        ..Default::default()
-    });
+    commands.spawn((
+        PlaybackSettings::DESPAWN,
+        AudioPlayer::<AudioSource>(asset_server.load("fire.ogg")),
+    ));
 }
