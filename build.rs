@@ -543,7 +543,9 @@ impl AudioFile {
     fn pascal_case(&self) -> String {
         let mut parts: Vec<String> = self
             .path
-            .split(|c: char| c.is_whitespace() || "-_.\\".contains(c))
+            .split(|c: char| {
+                c.is_whitespace() || "-_.".contains(c) || c == std::path::MAIN_SEPARATOR
+            })
             .filter(|s| !s.is_empty())
             .map(|s| {
                 let mut chars = s.chars();
