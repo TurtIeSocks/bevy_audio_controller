@@ -491,7 +491,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_audio_controller"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
@@ -502,7 +502,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_audio_controller_derive"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "quote",
  "syn 2.0.85",
