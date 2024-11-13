@@ -117,7 +117,8 @@ fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
 
     // Adjusting Music & Global will affect this sound
     ew.send(
-        MusicChannel::play_event(AudioFiles::BackgroundOGG).with_settings(PlaybackSettings::LOOP),
+        MusicChannel::play_event(AudioFiles::MusicBackgroundOGG)
+            .with_settings(PlaybackSettings::LOOP),
     );
 }
 

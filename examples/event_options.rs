@@ -67,7 +67,7 @@ fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
     // Set the playback settings for a specific track in the channel
     let track_settings_event = SfxChannel::settings_event()
         .with_settings(PlaybackSettings::LOOP)
-        .with_track(AudioFiles::BackgroundOGG);
+        .with_track(AudioFiles::MusicBackgroundOGG);
 
     ew.send_batch(vec![
         vol_event,
