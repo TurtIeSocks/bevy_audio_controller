@@ -29,11 +29,13 @@ fn main() {
             (
                 play_sfx,
                 volume_buttons::<GlobalChannel>,
-                volume_label::<GlobalChannel>,
+                volume_label::<GlobalChannel>
+                    .run_if(resource_changed::<ChannelSettings<GlobalChannel>>),
                 volume_buttons::<MusicChannel>,
-                volume_label::<MusicChannel>,
+                volume_label::<MusicChannel>
+                    .run_if(resource_changed::<ChannelSettings<MusicChannel>>),
                 volume_buttons::<SfxChannel>,
-                volume_label::<SfxChannel>,
+                volume_label::<SfxChannel>.run_if(resource_changed::<ChannelSettings<SfxChannel>>),
             ),
         )
         .run();
@@ -70,7 +72,7 @@ fn volume_buttons<Channel: ACBounds>(
 }
 
 fn volume_label<Channel: ACBounds>(
-    mut text_query: Query<&mut TextSpan, (With<VolumeLabel>, With<Channel>)>,
+    mut text_query: Query<&mut Text, (With<VolumeLabel>, With<Channel>)>,
     settings: Res<ChannelSettings<Channel>>,
 ) {
     for mut text in &mut text_query {
