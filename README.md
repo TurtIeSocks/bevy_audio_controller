@@ -202,6 +202,7 @@ Demonstrates:
 
 | bevy | bevy_audio_controller |
 | ---- | --------------------- |
+| 0.15 | 0.3                   |
 | 0.14 | 0.2                   |
 
 ## Credits

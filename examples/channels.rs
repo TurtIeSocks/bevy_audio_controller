@@ -1,5 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*};
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use bevy_audio_controller::prelude::*;
 
@@ -19,7 +19,7 @@ fn main() {
             filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
             ..Default::default()
         }))
-        // .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<MusicChannel>()
         .register_audio_channel::<SfxChannel>()
