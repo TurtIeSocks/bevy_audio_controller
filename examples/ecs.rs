@@ -36,7 +36,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, mut settings: ResMut<ChannelSettings<GlobalChannel>>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     commands
         .spawn(helpers::get_container())
         .with_children(|parent| {

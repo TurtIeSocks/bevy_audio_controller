@@ -29,7 +29,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     let event =
         MusicChannel::play_event("background.ogg".into()).with_settings(PlaybackSettings::LOOP);
     ew.send(event);

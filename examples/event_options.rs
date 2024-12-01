@@ -39,7 +39,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn((Name::new("SFX Container"), SfxParent));
     commands.spawn((Name::new("Player"), Player));
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 
     commands
         .spawn(helpers::get_container())

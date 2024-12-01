@@ -1,8 +1,5 @@
 # Bevy Audio Controller
 
-<!--
-[![license](https://img.shields.io/crates/l/bevy_audio_controller)](https://github.com/TurtIeSocks/bevy_audio_controller#license) -->
-
 [![crates.io](https://img.shields.io/crates/v/bevy_audio_controller)](https://crates.io/crates/bevy_audio_controller)
 [![license](https://img.shields.io/crates/l/bevy_audio_controller)](https://github.com/TurtIeSocks/bevy_audio_controller#license)
 
@@ -205,6 +202,7 @@ Demonstrates:
 
 | bevy | bevy_audio_controller |
 | ---- | --------------------- |
+| 0.15 | 0.3                   |
 | 0.14 | 0.2                   |
 
 ## Credits
