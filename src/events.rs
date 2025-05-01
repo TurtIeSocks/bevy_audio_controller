@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use bevy::{
-    audio::PlaybackSettings,
+    audio::{PlaybackSettings, Volume},
     ecs::{entity::Entity, event::Event},
 };
 
@@ -22,7 +22,7 @@ use crate::{audio_files::AudioFiles, bounds::ACBounds, delay_mode::DelayMode};
 ///
 /// fn play(mut play_ew: EventWriter<GlobalPlayEvent>) {
 ///     let event = GlobalPlayEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
-///     play_ew.send(event);
+///     play_ew.write(event);
 /// }
 /// ```
 
@@ -131,7 +131,7 @@ impl<Channel: ACBounds> From<AudioFiles> for PlayEvent<Channel> {
 #[derive(Event)]
 pub struct SettingsEvent<Channel: ACBounds> {
     pub(super) settings: Option<PlaybackSettings>,
-    pub(super) volume: Option<f32>,
+    pub(super) volume: Option<Volume>,
     pub(super) track: Option<AudioFiles>,
     pub(super) delay_mode: Option<DelayMode>,
     pub(super) all: bool,
@@ -151,7 +151,7 @@ impl<Channel: ACBounds> SettingsEvent<Channel> {
     }
 
     /// Sets the volume for the channel
-    pub fn with_volume(mut self, volume: f32) -> Self {
+    pub fn with_volume(mut self, volume: Volume) -> Self {
         self.volume = Some(volume);
         self
     }
@@ -171,7 +171,9 @@ impl<Channel: ACBounds> SettingsEvent<Channel> {
     /// Instead applies the specified setting or delay_mode to a specific track
     pub fn with_track(mut self, id: AudioFiles) -> Self {
         if self.all {
-            panic!("Do set all and a specific track at the same time, either call `all()` or `with_track()`");
+            panic!(
+                "Do set all and a specific track at the same time, either call `all()` or `with_track()`"
+            );
         }
         self.track = Some(id);
         self
@@ -180,7 +182,9 @@ impl<Channel: ACBounds> SettingsEvent<Channel> {
     /// Instead applies the specified setting or delay_mode to every track in the channel
     pub fn all(mut self) -> Self {
         if self.track.is_some() {
-            panic!("Do set all and a specific track at the same time, either call `all()` or `with_track()`");
+            panic!(
+                "Do set all and a specific track at the same time, either call `all()` or `with_track()`"
+            );
         }
         self.all = true;
         self

@@ -1,5 +1,5 @@
 use bevy::{log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use bevy_audio_controller::prelude::*;
 
@@ -13,9 +13,13 @@ struct SfxChannel;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
-            filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
+            filter:
+                "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
@@ -57,14 +61,14 @@ fn setup(mut commands: Commands) {
 fn play_sfx(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
     // Plays the spray sound every 200% * duration of `spray.ogg` from the time that the sound is spawned
     // Resulting in a gap between plays
-    ew.send(
+    ew.write(
         SfxChannel::play_event(AudioFiles::SprayOGG)
             .with_settings(PlaybackSettings::DESPAWN)
             .with_delay_mode(DelayMode::Percent(200)),
     );
     // Plays the fire sound duration of `fire.ogg` - 500 milliseconds from the time that the sound is spawned
     // Resulting in overlap between plays
-    ew.send(
+    ew.write(
         SfxChannel::play_event(AudioFiles::FireOGG)
             .with_settings(PlaybackSettings::DESPAWN)
             .with_delay_mode(DelayMode::Milliseconds(-500)),

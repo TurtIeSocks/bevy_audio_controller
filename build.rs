@@ -190,7 +190,7 @@ mod ac_traits {{
 pub mod audio_files {{
     #![allow(unused)]
 
-    use bevy::{{core::Name, log::warn}};
+    use bevy::{{ecs::name::Name, log::warn}};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
 
@@ -381,7 +381,7 @@ mod ac_assets {{
     use bevy::{{
         asset::{{AssetServer, Handle}},
         audio::AudioSource,
-        ecs::system::{{Res, ResMut, Resource}},
+        ecs::{{resource::Resource, system::{{Res, ResMut}}}},
     }};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectResource, reflect::Reflect}};
