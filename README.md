@@ -61,6 +61,10 @@ fn play_fire(mut ew: EventWriter<SfxEvent>) {
 
 None
 
+### `log`
+
+Enables logging with `bevy/bevy_log`
+
 ### `inspect`
 
 Adds additional reflection traits to the structs used by this plugin to make them available in `bevy-egui-inspector`

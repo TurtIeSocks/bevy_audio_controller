@@ -1,7 +1,4 @@
-use bevy::{
-    ecs::component::{Component, Immutable, StorageType},
-    log::trace,
-};
+use bevy::ecs::component::{Component, Immutable, StorageType};
 
 use ac_traits::CommandAudioTracks;
 use audio_files::AudioFiles;
@@ -26,7 +23,8 @@ impl Component for AudioFiles {
     fn on_add() -> Option<bevy::ecs::component::ComponentHook> {
         Some(move |mut world, ctx| {
             let val: AudioFiles = world.get::<Self>(ctx.entity).unwrap().clone();
-            trace!("Adding audio track: {:?}", val);
+            #[cfg(feature = "log")]
+            bevy::log::debug!("Adding audio track: {:?}", val);
             if world.get::<DelayMode>(ctx.entity).is_none() {
                 world
                     .commands()
@@ -40,7 +38,8 @@ impl Component for AudioFiles {
     fn on_remove() -> Option<bevy::ecs::component::ComponentHook> {
         Some(move |mut world, ctx| {
             let val = world.get::<Self>(ctx.entity).unwrap().clone();
-            trace!("Removing audio track: {:?}", val);
+            #[cfg(feature = "log")]
+            bevy::log::debug!("Removing audio track: {:?}", val);
             if world.get::<DelayMode>(ctx.entity).is_none() {
                 world
                     .commands()

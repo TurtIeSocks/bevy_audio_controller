@@ -17,9 +17,10 @@ members = ["macros"]
 
 [features]
 # Dev mode
-# default = ["all-codecs", "inspect"]
-default = []
+default = ["all-codecs", "inspect"]
+# default = []
 inspect = []
+log = ["bevy/bevy_log"]
 
 # Pass features to symphonia
 # aac = ["symphonia/aac"]
