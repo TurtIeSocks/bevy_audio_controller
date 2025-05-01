@@ -190,7 +190,7 @@ mod ac_traits {{
 pub mod audio_files {{
     #![allow(unused)]
 
-    use bevy::{{core::Name, log::warn}};
+    use bevy::{{ecs::name::Name}};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
 
@@ -248,7 +248,8 @@ pub mod audio_files {{
             match normalized {{
                 {}
                 unknown => {{
-                    warn!("Unknown audio file '{{}}' requested", unknown);
+                    #[cfg(feature = "log")]
+                    bevy::log::warn!("Unknown audio file '{{}}' requested", unknown);
                     AudioFiles::Unknown
                 }}
             }}
@@ -272,7 +273,8 @@ pub mod audio_files {{
             match file_name {{
                 {}
                 unknown => {{
-                    warn!("Unknown audio file '{{:?}}' requested", unknown);
+                    #[cfg(feature = "log")]
+                    bevy::log::warn!("Unknown audio file '{{:?}}' requested", unknown);
                     "Unknown"
                 }}
             }}
@@ -292,7 +294,8 @@ pub mod audio_files {{
             match self {{
         {}
                 Self::Unknown => {{
-                    warn!("Unknown audio file requested");
+                    #[cfg(feature = "log")]
+                    bevy::log::warn!("Unknown audio file requested");
                     AudioFile::default()
                 }}
             }}
@@ -302,7 +305,8 @@ pub mod audio_files {{
             match self {{
         {}
                 Self::Unknown => {{
-                    warn!("Unknown audio duration requested");
+                    #[cfg(feature = "log")]
+                    bevy::log::warn!("Unknown audio duration requested");
                     0.0
                 }}
             }}
@@ -312,7 +316,8 @@ pub mod audio_files {{
             match self {{
         {}
                 Self::Unknown => {{
-                    warn!("Unknown audio file name requested");
+                    #[cfg(feature = "log")]
+                    bevy::log::warn!("Unknown audio file name requested");
                     ""
                 }}
             }}
@@ -381,7 +386,7 @@ mod ac_assets {{
     use bevy::{{
         asset::{{AssetServer, Handle}},
         audio::AudioSource,
-        ecs::system::{{Res, ResMut, Resource}},
+        ecs::{{resource::Resource, system::{{Res, ResMut}}}},
     }};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectResource, reflect::Reflect}};

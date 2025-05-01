@@ -1,5 +1,11 @@
-use bevy::{color::palettes::tailwind, ecs::system::EntityCommands, log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::{
+    audio::Volume,
+    color::palettes::tailwind,
+    ecs::{relationship::RelatedSpawnerCommands, system::EntityCommands},
+    log::LogPlugin,
+    prelude::*,
+};
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use bevy_audio_controller::prelude::*;
 
@@ -16,9 +22,13 @@ struct SfxChannel;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
-            filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
+            filter:
+                "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<MusicChannel>()
@@ -57,7 +67,7 @@ fn volume_buttons<Channel: ACBounds>(
     mut ew: EventWriter<SettingsEvent<Channel>>,
     settings: Res<ChannelSettings<Channel>>,
 ) {
-    let mut current = settings.get_channel_volume();
+    let mut current = settings.get_channel_volume().to_linear();
     for interaction in up_query.iter() {
         if interaction == &Interaction::Pressed {
             current = (current + 0.05).min(1.0);
@@ -68,7 +78,7 @@ fn volume_buttons<Channel: ACBounds>(
             current = (current - 0.05).max(0.0);
         }
     }
-    ew.send(SettingsEvent::<Channel>::new().with_volume(current));
+    ew.write(SettingsEvent::<Channel>::new().with_volume(Volume::Linear(current)));
 }
 
 fn volume_label<Channel: ACBounds>(
@@ -76,7 +86,7 @@ fn volume_label<Channel: ACBounds>(
     settings: Res<ChannelSettings<Channel>>,
 ) {
     for mut text in &mut text_query {
-        **text = format!("{:.0}%", settings.get_channel_volume() * 100.0);
+        **text = format!("{:.0}%", settings.get_channel_volume().to_linear() * 100.0);
     }
 }
 
@@ -117,7 +127,7 @@ fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
         });
 
     // Adjusting Music & Global will affect this sound
-    ew.send(
+    ew.write(
         MusicChannel::play_event(AudioFiles::MusicBackgroundOGG)
             .with_settings(PlaybackSettings::LOOP),
     );
@@ -128,16 +138,17 @@ fn play_sfx(
     mut global_ew: EventWriter<PlayEvent<GlobalChannel>>,
 ) {
     // Adjusting SFX & Global will affect this sound
-    sfx_ew
-        .send(SfxChannel::play_event(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN));
+    sfx_ew.write(
+        SfxChannel::play_event(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN),
+    );
 
     // Adjusting Global will affect this sound
-    global_ew.send(
+    global_ew.write(
         GlobalChannel::play_event(AudioFiles::SprayOGG).with_settings(PlaybackSettings::DESPAWN),
     );
 }
 
-fn build_header(parent: &mut ChildBuilder, text: &str) {
+fn build_header(parent: &mut RelatedSpawnerCommands<'_, ChildOf>, text: &str) {
     parent
         .spawn(Node {
             padding: UiRect::top(Val::Px(20.0)),
@@ -154,7 +165,7 @@ fn build_header(parent: &mut ChildBuilder, text: &str) {
         });
 }
 
-fn build_row<'a>(parent: &'a mut ChildBuilder) -> EntityCommands<'a> {
+fn build_row<'a>(parent: &'a mut RelatedSpawnerCommands<'_, ChildOf>) -> EntityCommands<'a> {
     parent.spawn(Node {
         align_items: AlignItems::Center,
         justify_content: JustifyContent::Center,
@@ -163,13 +174,13 @@ fn build_row<'a>(parent: &'a mut ChildBuilder) -> EntityCommands<'a> {
     })
 }
 
-fn build_audio_row<Channel: ACBounds>(parent: &mut ChildBuilder) {
+fn build_audio_row<Channel: ACBounds>(parent: &mut RelatedSpawnerCommands<'_, ChildOf>) {
     build_button(parent, "<", (VolumeDownButton, Channel::default()));
     build_label(parent, "100", (VolumeLabel, Channel::default()));
     build_button(parent, ">", (VolumeUpButton, Channel::default()));
 }
 
-fn build_label(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
+fn build_label(parent: &mut RelatedSpawnerCommands<'_, ChildOf>, text: &str, marker: impl Bundle) {
     parent
         .spawn((
             Node {
@@ -194,7 +205,7 @@ fn build_label(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
         });
 }
 
-fn build_button(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
+fn build_button(parent: &mut RelatedSpawnerCommands<'_, ChildOf>, text: &str, marker: impl Bundle) {
     parent
         .spawn((
             Button,
@@ -208,7 +219,7 @@ fn build_button(parent: &mut ChildBuilder, text: &str, marker: impl Bundle) {
             BorderRadius::all(Val::Px(5.)),
             marker,
         ))
-        .with_children(|parent: &mut ChildBuilder<'_>| {
+        .with_children(|parent| {
             parent.spawn((
                 Text::new(text),
                 TextFont {

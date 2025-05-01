@@ -1,5 +1,7 @@
-use bevy::{input::common_conditions::input_just_pressed, log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::{
+    audio::Volume, input::common_conditions::input_just_pressed, log::LogPlugin, prelude::*,
+};
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use bevy_audio_controller::prelude::*;
 
@@ -19,9 +21,13 @@ struct Player;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
-            filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
+            filter:
+                "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
@@ -53,7 +59,7 @@ fn setup(mut commands: Commands) {
 
 fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
     // Set the volume for the channel
-    let vol_event = SfxChannel::settings_event().with_volume(0.5);
+    let vol_event = SfxChannel::settings_event().with_volume(Volume::Linear(0.5));
 
     // Set the default playback settings for the channel
     let default_settings_event =
@@ -69,7 +75,7 @@ fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
         .with_settings(PlaybackSettings::LOOP)
         .with_track(AudioFiles::MusicBackgroundOGG);
 
-    ew.send_batch(vec![
+    ew.write_batch(vec![
         vol_event,
         default_settings_event,
         all_track_settings_event,
@@ -85,9 +91,9 @@ fn play_sfx(
     if parent_query.is_empty() || player_query.is_empty() {
         return;
     }
-    let parent_entity = parent_query.single();
-    let player_entity = player_query.single();
-    ew.send(
+    let parent_entity = parent_query.single().unwrap();
+    let player_entity = player_query.single().unwrap();
+    ew.write(
         SfxChannel::play_event(AudioFiles::FireOGG)
             // Overrides the default settings for this track
             .with_settings(PlaybackSettings::REMOVE)
@@ -95,7 +101,7 @@ fn play_sfx(
             .with_delay_mode(DelayMode::Wait)
             .as_child(),
     );
-    ew.send(
+    ew.write(
         SfxChannel::play_event("spray.ogg".into())
             .with_settings(PlaybackSettings::REMOVE)
             .with_entity(player_entity),
@@ -103,7 +109,7 @@ fn play_sfx(
 }
 
 fn force_play(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
-    ew.send(
+    ew.write(
         SfxChannel::play_event(AudioFiles::FireOGG)
             .with_delay_mode(DelayMode::Immediate)
             .with_settings(PlaybackSettings::DESPAWN),

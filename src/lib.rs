@@ -1,7 +1,4 @@
-use bevy::{
-    ecs::component::{Component, ComponentHooks, StorageType},
-    log::trace,
-};
+use bevy::ecs::component::{Component, Immutable, StorageType};
 
 use ac_traits::CommandAudioTracks;
 use audio_files::AudioFiles;
@@ -21,37 +18,36 @@ include!(concat!(env!("OUT_DIR"), "/audio_controller.rs"));
 
 impl Component for AudioFiles {
     const STORAGE_TYPE: StorageType = StorageType::Table;
+    type Mutability = Immutable;
 
-    fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        _hooks.on_add(|mut world, entity, _| {
-            let val: AudioFiles = world.get::<Self>(entity).unwrap().clone();
-            trace!("Adding audio track: {:?}", val);
-            if world.get::<DelayMode>(entity).is_none() {
+    fn on_add() -> Option<bevy::ecs::component::ComponentHook> {
+        Some(move |mut world, ctx| {
+            let val: AudioFiles = world.get::<Self>(ctx.entity).unwrap().clone();
+            #[cfg(feature = "log")]
+            bevy::log::debug!("Adding audio track: {:?}", val);
+            if world.get::<DelayMode>(ctx.entity).is_none() {
                 world
                     .commands()
-                    .entity(entity)
+                    .entity(ctx.entity)
                     .insert(DelayMode::default())
                     .insert_audio_track(&val);
             }
-            // if world.get::<Name>(entity).is_none() {
-            //     world
-            //         .commands()
-            //         .entity(entity)
-            //         .insert(Name::new(val.to_string()));
-            // }
-        });
+        })
+    }
 
-        _hooks.on_remove(|mut world, entity, _| {
-            let val = world.get::<Self>(entity).unwrap().clone();
-            trace!("Removing audio track: {:?}", val);
-            if world.get::<DelayMode>(entity).is_none() {
+    fn on_remove() -> Option<bevy::ecs::component::ComponentHook> {
+        Some(move |mut world, ctx| {
+            let val = world.get::<Self>(ctx.entity).unwrap().clone();
+            #[cfg(feature = "log")]
+            bevy::log::debug!("Removing audio track: {:?}", val);
+            if world.get::<DelayMode>(ctx.entity).is_none() {
                 world
                     .commands()
-                    .entity(entity)
+                    .entity(ctx.entity)
                     .remove::<DelayMode>()
                     .remove_audio_track(&val);
             }
-        });
+        })
     }
 }
 

@@ -1,17 +1,17 @@
-use core::marker::PhantomData;
+use core::{marker::PhantomData, time::Duration};
 
 use bevy::{
     audio::{PlaybackSettings, Volume},
-    ecs::system::Resource,
+    ecs::resource::Resource,
+    platform::collections::HashMap,
     time::{Timer, TimerMode},
-    utils::hashbrown::HashMap,
 };
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
 use crate::{bounds::ACBounds, delay_mode::DelayMode};
 
-use super::audio_files::{AudioFiles, ALL_FILES};
+use super::audio_files::{ALL_FILES, AudioFiles};
 
 /// Stores all of the settings for a channel
 ///
@@ -33,13 +33,13 @@ pub struct ChannelSettings<Channel: ACBounds> {
 
 impl<T: ACBounds> ChannelSettings<T> {
     /// Returns the volume of the channel on a scale of 0.0 - 1.0
-    pub fn get_channel_volume(&self) -> f32 {
-        self.channel_volume.get()
+    pub fn get_channel_volume(&self) -> Volume {
+        self.channel_volume
     }
 
     /// Sets the volume of the channel, scale is 0.0 - 1.0
-    pub fn set_channel_volume(&mut self, volume: f32) {
-        self.channel_volume = Volume::new(volume);
+    pub fn set_channel_volume(&mut self, volume: Volume) {
+        self.channel_volume = volume;
     }
 
     /// Returns the [PlaybackSettings] for a specific track
@@ -113,7 +113,7 @@ pub(super) struct AudioCache<T: ACBounds> {
 }
 
 impl<T: ACBounds> AudioCache<T> {
-    pub(super) fn tick(&mut self, time: bevy::utils::Duration) {
+    pub(super) fn tick(&mut self, time: Duration) {
         self.map.values_mut().for_each(|timer| {
             timer.tick(time);
         });

@@ -7,12 +7,11 @@ use bevy::{
         query::{Added, With, Without},
         removal_detection::RemovedComponents,
         schedule::{
+            IntoScheduleConfigs,
             common_conditions::{on_event, resource_changed},
-            IntoSystemConfigs,
         },
         system::{Commands, Query, Res, ResMut},
     },
-    hierarchy::{BuildChildren, DespawnRecursiveExt},
     time::Time,
 };
 
@@ -38,8 +37,8 @@ impl ChannelRegistration for App {
     fn register_audio_channel<Channel: ACBounds>(&mut self) -> &mut Self {
         self.world_mut()
             .register_component_hooks::<Channel>()
-            .on_add(|mut world, entity, _| {
-                world.commands().entity(entity).insert(HasChannel);
+            .on_add(|mut world, ctx| {
+                world.commands().entity(ctx.entity).insert(HasChannel);
             });
 
         self.add_event::<PlayEvent<Channel>>()
@@ -82,11 +81,11 @@ fn tick_audio_cache<Channel: ACBounds>(mut cache: ResMut<AudioCache<Channel>>, t
 fn update_track_volumes<Channel: ACBounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
-    track_query: Query<(&AudioSink, &AudioFiles), With<Channel>>,
+    mut track_query: Query<(&mut AudioSink, &AudioFiles), With<Channel>>,
 ) {
     let volume = helpers::get_normalized_volume(&channel, &global);
-    track_query.iter().for_each(|(sink, id)| {
-        let track_volume = channel.get_track_setting(id).volume.get();
+    track_query.iter_mut().for_each(|(mut sink, id)| {
+        let track_volume = channel.get_track_setting(id).volume;
         sink.set_volume(volume * track_volume);
     });
 }
@@ -94,13 +93,18 @@ fn update_track_volumes<Channel: ACBounds>(
 fn update_volume_on_insert<Channel: ACBounds>(
     channel: Res<ChannelSettings<Channel>>,
     global: Res<ChannelSettings<GlobalChannel>>,
-    sink_query: Query<&AudioSink, (Added<AudioSink>, With<Channel>)>,
+    mut sink_query: Query<&mut AudioSink, (Added<AudioSink>, With<Channel>)>,
 ) {
     let volume = helpers::get_normalized_volume(&channel, &global);
-    sink_query.iter().for_each(|sink| {
+    sink_query.iter_mut().for_each(|mut sink| {
         let new_volume = sink.volume() * volume;
-        if volume != 1.0 {
-            bevy::log::trace!("Setting volume from {} to {}", volume, new_volume);
+        #[cfg(feature = "log")]
+        if volume.to_linear() != 1.0 {
+            bevy::log::trace!(
+                "Setting volume from {} to {}",
+                volume.to_linear(),
+                new_volume.to_linear()
+            );
         }
         sink.set_volume(new_volume);
     });
@@ -126,7 +130,7 @@ fn ecs_system<Channel: ACBounds>(
                 events.push(event);
             }
         });
-    ew.send_batch(events);
+    ew.write_batch(events);
 }
 
 fn remove_audio_components<Channel: ACBounds>(
@@ -192,7 +196,7 @@ fn play_event_reader<Channel: ACBounds>(
                     if event.child {
                         return;
                     }
-                    commands.entity(entity).despawn_recursive();
+                    commands.entity(entity).despawn();
                 }
                 PlaybackMode::Remove => {
                     commands

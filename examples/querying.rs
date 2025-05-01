@@ -1,5 +1,5 @@
-use bevy::{log::LogPlugin, prelude::*};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::{audio::Volume, log::LogPlugin, prelude::*};
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use bevy_audio_controller::prelude::*;
 
@@ -11,9 +11,13 @@ struct SfxChannel;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
-            filter: "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn".to_string(),
+            filter:
+                "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
@@ -41,15 +45,15 @@ fn play_sfx(mut commands: Commands) {
 
 // This system will run after the `AudioSink` components have been added to any entities on the `SfxChannel`
 fn do_something_with_sfx(
-    sfx_query: Query<(Entity, &Name, &AudioSink), (Added<AudioSink>, With<SfxChannel>)>,
+    mut sfx_query: Query<(Entity, &Name, &mut AudioSink), (Added<AudioSink>, With<SfxChannel>)>,
 ) {
-    for (entity, name, sink) in sfx_query.iter() {
-        sink.set_volume(0.75);
+    for (entity, name, mut sink) in sfx_query.iter_mut() {
+        sink.set_volume(Volume::Linear(0.75));
         info!(
             "Sfx: {} ({}) is playing at volume {}",
             name,
             entity,
-            sink.volume()
+            sink.volume().to_linear()
         );
     }
 }
