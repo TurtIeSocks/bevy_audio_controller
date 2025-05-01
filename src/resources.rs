@@ -3,11 +3,11 @@ use core::{marker::PhantomData, time::Duration};
 use bevy::{
     audio::{PlaybackSettings, Volume},
     ecs::resource::Resource,
+    platform::collections::HashMap,
     time::{Timer, TimerMode},
 };
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
-use hashbrown::HashMap;
 
 use crate::{bounds::ACBounds, delay_mode::DelayMode};
 
