@@ -4,10 +4,9 @@ use bevy::{
     ecs::{
         component::Component,
         entity::Entity,
-        query::Added,
+        query::{Added, Without},
         system::{Commands, Query},
     },
-    prelude::Without,
 };
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectComponent, reflect::Reflect};
@@ -56,22 +55,22 @@ fn assign_to_global_on_sink(
     mut commands: Commands,
     query: Query<(Entity, Option<&HasChannel>), Added<AudioSink>>,
 ) {
-    for (entity, has_channel_opt) in query.iter() {
+    query.iter().for_each(|(entity, has_channel_opt)| {
         if has_channel_opt.is_some() {
             commands.entity(entity).remove::<HasChannel>();
         } else {
             commands.entity(entity).insert(GlobalChannel);
         }
-    }
+    });
 }
 
 fn assign_to_global_on_file(
     mut commands: Commands,
     query: Query<(Entity, Option<&HasChannel>), (Added<AudioFiles>, Without<AudioSink>)>,
 ) {
-    for (entity, has_channel_opt) in query.iter() {
+    query.iter().for_each(|(entity, has_channel_opt)| {
         if has_channel_opt.is_none() {
             commands.entity(entity).insert(GlobalChannel);
         }
-    }
+    });
 }

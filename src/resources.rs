@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use bevy::{
     audio::{PlaybackSettings, Volume},
@@ -9,7 +9,7 @@ use bevy::{
 #[cfg(feature = "inspect")]
 use bevy::{ecs::reflect::ReflectResource, reflect::Reflect};
 
-use crate::{bounds::ACBounds, prelude::DelayMode};
+use crate::{bounds::ACBounds, delay_mode::DelayMode};
 
 use super::audio_files::{AudioFiles, ALL_FILES};
 
@@ -58,9 +58,9 @@ impl<T: ACBounds> ChannelSettings<T> {
 
     /// Sets the [PlaybackSettings] for all tracks in this channel that exist in your asset folder
     pub fn set_all_track_settings(&mut self, settings: PlaybackSettings) {
-        for track in ALL_FILES {
+        ALL_FILES.into_iter().for_each(|track| {
             self.track_settings.insert(track, settings.clone());
-        }
+        });
     }
 
     /// Returns the [DelayMode] for a specific track
@@ -77,9 +77,9 @@ impl<T: ACBounds> ChannelSettings<T> {
 
     /// Sets the [DelayMode] for all tracks in this channel that exist in your asset folder
     pub fn set_all_track_delay_modes(&mut self, delay_mode: DelayMode) {
-        for track in ALL_FILES {
+        ALL_FILES.into_iter().for_each(|track| {
             self.track_delay_modes.insert(track, delay_mode.clone());
-        }
+        });
     }
 
     /// Returns the default [PlaybackSettings] for this channel
@@ -114,9 +114,9 @@ pub(super) struct AudioCache<T: ACBounds> {
 
 impl<T: ACBounds> AudioCache<T> {
     pub(super) fn tick(&mut self, time: bevy::utils::Duration) {
-        for timer in self.map.values_mut() {
+        self.map.values_mut().for_each(|timer| {
             timer.tick(time);
-        }
+        });
     }
 
     pub(super) fn can_play(&self, id: &AudioFiles) -> bool {

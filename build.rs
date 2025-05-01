@@ -190,12 +190,23 @@ mod ac_traits {{
 pub mod audio_files {{
     #![allow(unused)]
 
-    use std::path::Path;
-
     use bevy::{{core::Name, log::warn}};
     #[cfg(feature = "inspect")]
     use bevy::{{ecs::reflect::ReflectComponent, reflect::Reflect}};
-    
+
+    fn normalize_path<'a>(input: &'a str, buf: &'a mut [u8]) -> Option<&'a str> {{
+        let bytes = input.as_bytes();
+        if bytes.len() > buf.len() {{
+            return None; // input too long for our fixed buffer
+        }}
+        let mut pos = 0;
+        for &b in bytes {{
+            buf[pos] = if b == b'\\' {{ b'/' }} else {{ b }};
+            pos += 1;
+        }}
+        core::str::from_utf8(&buf[..pos]).ok()
+    }}
+
     /// Contains the path and duration of the audio file
     #[derive(Debug, Default)]
     #[cfg_attr(feature = "inspect", derive(Reflect))]
@@ -231,7 +242,10 @@ pub mod audio_files {{
 
     impl From<&str> for AudioFiles {{
         fn from(file_name: &str) -> Self {{
-            match file_name.replace('\\', "/").as_str() {{
+            let mut buf = [0u8; 256]; // adjust size as necessary
+            let normalized = normalize_path(file_name, &mut buf).unwrap_or(file_name);
+
+            match normalized {{
                 {}
                 unknown => {{
                     warn!("Unknown audio file '{{}}' requested", unknown);
@@ -432,7 +446,7 @@ impl AudioFile {
     fn get_enum_match(&self) -> String {
         let struct_name = self.pascal_case();
         format!(
-            "path if Path::new(path) == Path::new(Self::{}.path) => AudioFiles::{},",
+            "path if path == Self::{}.path => AudioFiles::{},",
             self.snake_case().to_uppercase(),
             struct_name
         )

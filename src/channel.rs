@@ -4,15 +4,15 @@ use bevy::{
     ecs::{
         entity::Entity,
         event::{EventReader, EventWriter},
-        query::{Added, With},
+        query::{Added, With, Without},
+        removal_detection::RemovedComponents,
         schedule::{
             common_conditions::{on_event, resource_changed},
             IntoSystemConfigs,
         },
         system::{Commands, Query, Res, ResMut},
     },
-    hierarchy::BuildChildren,
-    prelude::{DespawnRecursiveExt, RemovedComponents, Without},
+    hierarchy::{BuildChildren, DespawnRecursiveExt},
     time::Time,
 };
 
@@ -85,10 +85,10 @@ fn update_track_volumes<Channel: ACBounds>(
     track_query: Query<(&AudioSink, &AudioFiles), With<Channel>>,
 ) {
     let volume = helpers::get_normalized_volume(&channel, &global);
-    for (sink, id) in track_query.iter() {
+    track_query.iter().for_each(|(sink, id)| {
         let track_volume = channel.get_track_setting(id).volume.get();
         sink.set_volume(volume * track_volume);
-    }
+    });
 }
 
 fn update_volume_on_insert<Channel: ACBounds>(
@@ -97,23 +97,14 @@ fn update_volume_on_insert<Channel: ACBounds>(
     sink_query: Query<&AudioSink, (Added<AudioSink>, With<Channel>)>,
 ) {
     let volume = helpers::get_normalized_volume(&channel, &global);
-    for sink in sink_query.iter() {
+    sink_query.iter().for_each(|sink| {
         let new_volume = sink.volume() * volume;
-        bevy::log::debug!("Setting volume from {} to {}", volume, new_volume);
+        if volume != 1.0 {
+            bevy::log::trace!("Setting volume from {} to {}", volume, new_volume);
+        }
         sink.set_volume(new_volume);
-    }
+    });
 }
-
-// fn update_internal_timer_on_speed_change<Channel: ACBounds>(
-//     sink_query: Query<(Entity, &AudioSink), (Changed<AudioSink>, With<Channel>)>,
-//     settings: Res<ChannelSettings<Channel>>,
-//     mut settings_ew: EventWriter<SettingsEvent<Channel>>,
-// ) {
-//     for (entity, sink) in sink_query.iter() {
-//         bevy::log::info!("{}: speed changed to {}", entity, sink.speed());
-//         // settings_ew.send(SettingsEvent::new().with_speed(sink.speed));
-//     }
-// }
 
 fn ecs_system<Channel: ACBounds>(
     query: Query<
@@ -123,16 +114,18 @@ fn ecs_system<Channel: ACBounds>(
     mut ew: EventWriter<PlayEvent<Channel>>,
 ) {
     let mut events = Vec::new();
-    for (entity, audio_file, settings, mode) in query.iter() {
-        let event = PlayEvent::<Channel>::new(*audio_file)
-            .with_entity(entity)
-            .with_delay_mode(mode.clone());
-        if let Some(settings) = settings {
-            events.push(event.with_settings(settings.clone()));
-        } else {
-            events.push(event);
-        }
-    }
+    query
+        .iter()
+        .for_each(|(entity, audio_file, settings, mode)| {
+            let event = PlayEvent::<Channel>::new(*audio_file)
+                .with_entity(entity)
+                .with_delay_mode(mode.clone());
+            if let Some(settings) = settings {
+                events.push(event.with_settings(settings.clone()));
+            } else {
+                events.push(event);
+            }
+        });
     ew.send_batch(events);
 }
 
@@ -141,14 +134,14 @@ fn remove_audio_components<Channel: ACBounds>(
     mut removed: RemovedComponents<AudioSink>,
     channel_query: Query<&AudioFiles, With<Channel>>,
 ) {
-    for entity in removed.read() {
+    removed.read().for_each(|entity| {
         if let Ok(track) = channel_query.get(entity) {
             commands
                 .entity(entity)
                 .remove_audio_track(track)
                 .remove::<(Channel, AudioFiles)>();
         }
-    }
+    });
 }
 
 fn play_event_reader<Channel: ACBounds>(
@@ -158,7 +151,7 @@ fn play_event_reader<Channel: ACBounds>(
     channel_settings: Res<ChannelSettings<Channel>>,
     mut audio_cache: ResMut<AudioCache<Channel>>,
 ) {
-    for event in events.read() {
+    events.read().for_each(|event| {
         let settings = if let Some(event_settings) = event.settings {
             event_settings
         } else {
@@ -209,14 +202,14 @@ fn play_event_reader<Channel: ACBounds>(
                 _ => {}
             }
         }
-    }
+    });
 }
 
 fn settings_event_reader<Channel: ACBounds>(
     mut channel_settings: ResMut<ChannelSettings<Channel>>,
     mut events: EventReader<SettingsEvent<Channel>>,
 ) {
-    for event in events.read() {
+    events.read().for_each(|event| {
         if let Some(volume) = event.volume {
             channel_settings.set_channel_volume(volume);
         }
@@ -242,5 +235,5 @@ fn settings_event_reader<Channel: ACBounds>(
                 channel_settings.set_default_settings(settings);
             }
         }
-    }
+    });
 }
