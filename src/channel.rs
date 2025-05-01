@@ -98,9 +98,14 @@ fn update_volume_on_insert<Channel: ACBounds>(
     let volume = helpers::get_normalized_volume(&channel, &global);
     sink_query.iter_mut().for_each(|mut sink| {
         let new_volume = sink.volume() * volume;
-        // if volume != 1.0 {
-        //     bevy::log::trace!("Setting volume from {} to {}", volume, new_volume);
-        // }
+        #[cfg(feature = "log")]
+        if volume.to_linear() != 1.0 {
+            bevy::log::trace!(
+                "Setting volume from {} to {}",
+                volume.to_linear(),
+                new_volume.to_linear()
+            );
+        }
         sink.set_volume(new_volume);
     });
 }

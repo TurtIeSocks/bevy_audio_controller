@@ -17,7 +17,7 @@ members = ["macros"]
 
 [features]
 # Dev mode
-# default = ["all-codecs", "inspect"]
+# default = ["all-codecs", "inspect", "log"]
 default = []
 inspect = []
 log = ["bevy/bevy_log"]

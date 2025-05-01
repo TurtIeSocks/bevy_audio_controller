@@ -1,6 +1,6 @@
+use bevy::ecs::component::Component;
 #[cfg(feature = "inspect")]
 use bevy::reflect::Reflect;
-use bevy::{ecs::component::Component, log::warn};
 
 /// Specifies how `bevy_audio_controller` should handle tracks on a per channel basis
 #[derive(Component, Default, PartialEq, Eq, Hash, Copy, Clone)]
@@ -41,7 +41,8 @@ impl DelayMode {
             DelayMode::Milliseconds(ms) => {
                 let ms: f32 = ms as f32 / 1000.0;
                 if ms < -track_duration {
-                    warn!("Delay ({}) should probably not be less than the negative length ({}) of the track. Use DelayMode::Immediate instead", ms, -track_duration);
+                    #[cfg(feature = "log")]
+                    bevy::log::warn!("Delay ({}) should probably not be less than the negative length ({}) of the track. Use DelayMode::Immediate instead", ms, -track_duration);
                 }
                 track_duration + ms
             }
