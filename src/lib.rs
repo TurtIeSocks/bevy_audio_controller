@@ -20,7 +20,7 @@ impl Component for AudioFiles {
     const STORAGE_TYPE: StorageType = StorageType::Table;
     type Mutability = Immutable;
 
-    fn on_add() -> Option<bevy::ecs::component::ComponentHook> {
+    fn on_add() -> Option<bevy::ecs::lifecycle::ComponentHook> {
         Some(move |mut world, ctx| {
             let val: AudioFiles = world.get::<Self>(ctx.entity).unwrap().clone();
             #[cfg(feature = "log")]
@@ -35,7 +35,7 @@ impl Component for AudioFiles {
         })
     }
 
-    fn on_remove() -> Option<bevy::ecs::component::ComponentHook> {
+    fn on_remove() -> Option<bevy::ecs::lifecycle::ComponentHook> {
         Some(move |mut world, ctx| {
             let val = world.get::<Self>(ctx.entity).unwrap().clone();
             #[cfg(feature = "log")]

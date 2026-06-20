@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use bevy::{
     audio::{PlaybackSettings, Volume},
-    ecs::{entity::Entity, event::Event},
+    ecs::{entity::Entity, message::Message},
 };
 
 use crate::{audio_files::AudioFiles, bounds::ACBounds, delay_mode::DelayMode};
@@ -20,13 +20,13 @@ use crate::{audio_files::AudioFiles, bounds::ACBounds, delay_mode::DelayMode};
 ///         .run();
 /// }
 ///
-/// fn play(mut play_ew: EventWriter<GlobalPlayEvent>) {
+/// fn play(mut play_ew: MessageWriter<GlobalPlayEvent>) {
 ///     let event = GlobalPlayEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
 ///     play_ew.write(event);
 /// }
 /// ```
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct PlayEvent<T: ACBounds> {
     pub(super) id: AudioFiles,
     pub(super) entity: Option<Entity>,
@@ -102,7 +102,7 @@ impl<Channel: ACBounds> From<AudioFiles> for PlayEvent<Channel> {
 ///         .run();
 /// }
 ///
-/// fn setup(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
+/// fn setup(mut ew: MessageWriter<SettingsEvent<SfxChannel>>) {
 ///     // Set the volume for the channel
 ///     let vol_event = SfxChannel::settings_event().with_volume(0.5);
 ///
@@ -120,7 +120,7 @@ impl<Channel: ACBounds> From<AudioFiles> for PlayEvent<Channel> {
 ///         .with_settings(PlaybackSettings::LOOP)
 ///         .with_track(AudioFiles::BackgroundOGG);
 ///
-///     ew.send_batch(vec![
+///     ew.write_batch(vec![
 ///         vol_event,
 ///         default_settings_event,
 ///         all_track_settings_event,
@@ -128,7 +128,7 @@ impl<Channel: ACBounds> From<AudioFiles> for PlayEvent<Channel> {
 ///     ]);
 /// }
 /// ```
-#[derive(Event)]
+#[derive(Message)]
 pub struct SettingsEvent<Channel: ACBounds> {
     pub(super) settings: Option<PlaybackSettings>,
     pub(super) volume: Option<Volume>,
