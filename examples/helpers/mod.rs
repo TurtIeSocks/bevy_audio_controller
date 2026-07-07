@@ -4,10 +4,10 @@ pub fn get_text(text: &str, size: f32) -> impl Bundle {
     (
         Text::new(text),
         TextFont {
-            font_size: size,
+            font_size: size.into(),
             ..default()
         },
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::justify(Justify::Center),
     )
 }
 

@@ -49,7 +49,7 @@ fn main() {
         .run();
 }
 
-fn play_fire(mut ew: EventWriter<SfxEvent>) {
+fn play_fire(mut ew: MessageWriter<SfxEvent>) {
     // even though this is called on every frame, it will only be played once the previous clip has finished
     ew.write(SfxEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN));
 }
@@ -206,6 +206,7 @@ Demonstrates:
 
 | bevy | bevy_audio_controller |
 | ---- | --------------------- |
+| 0.19 | 0.5                   |
 | 0.16 | 0.4                   |
 | 0.15 | 0.3                   |
 | 0.14 | 0.2                   |

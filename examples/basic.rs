@@ -16,9 +16,7 @@ fn main() {
                 "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .add_systems(Startup, setup)
@@ -45,7 +43,7 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn play_with_plugin(mut sfx_play_ew: EventWriter<GlobalPlayEvent>) {
+fn play_with_plugin(mut sfx_play_ew: MessageWriter<GlobalPlayEvent>) {
     let event = GlobalPlayEvent::new(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
     sfx_play_ew.write(event);
     // You can send events using the enum values or a string

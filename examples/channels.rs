@@ -20,9 +20,7 @@ fn main() {
                 "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<MusicChannel>()
@@ -32,14 +30,14 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
+fn setup(mut commands: Commands, mut ew: MessageWriter<PlayEvent<MusicChannel>>) {
     commands.spawn(Camera2d::default());
-    let event =
-        MusicChannel::play_event("background.ogg".into()).with_settings(PlaybackSettings::LOOP);
+    let event = MusicChannel::play_event("music/background.ogg".into())
+        .with_settings(PlaybackSettings::LOOP);
     ew.write(event);
 }
 
-fn play_sfx(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
+fn play_sfx(mut ew: MessageWriter<PlayEvent<SfxChannel>>) {
     let event =
         SfxChannel::play_event(AudioFiles::FireOGG).with_settings(PlaybackSettings::DESPAWN);
     ew.write(event);

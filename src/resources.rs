@@ -120,7 +120,7 @@ impl<T: ACBounds> AudioCache<T> {
     }
 
     pub(super) fn can_play(&self, id: &AudioFiles) -> bool {
-        self.map.get(id).map_or(true, |timer| timer.finished())
+        self.map.get(id).map_or(true, |timer| timer.is_finished())
     }
 
     pub(super) fn set_entry(&mut self, id: AudioFiles, duration: f32) {

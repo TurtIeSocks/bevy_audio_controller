@@ -3,12 +3,12 @@ use bevy::{
     audio::{AudioPlayer, AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings},
     ecs::{
         entity::Entity,
-        event::{EventReader, EventWriter},
+        lifecycle::RemovedComponents,
+        message::{MessageReader, MessageWriter},
         query::{Added, With, Without},
-        removal_detection::RemovedComponents,
         schedule::{
-            IntoScheduleConfigs,
-            common_conditions::{on_event, resource_changed},
+            IntoScheduleConfigs, SystemCondition,
+            common_conditions::{on_message, resource_changed},
         },
         system::{Commands, Query, Res, ResMut},
     },
@@ -41,8 +41,8 @@ impl ChannelRegistration for App {
                 world.commands().entity(ctx.entity).insert(HasChannel);
             });
 
-        self.add_event::<PlayEvent<Channel>>()
-            .add_event::<SettingsEvent<Channel>>()
+        self.add_message::<PlayEvent<Channel>>()
+            .add_message::<SettingsEvent<Channel>>()
             .init_resource::<ChannelSettings<Channel>>()
             .init_resource::<AudioCache<Channel>>()
             .add_systems(
@@ -52,16 +52,21 @@ impl ChannelRegistration for App {
                     ecs_system::<Channel>,
                     // update_internal_timer_on_speed_change::<Channel>,
                     update_volume_on_insert::<Channel>,
-                    settings_event_reader::<Channel>.run_if(on_event::<SettingsEvent<Channel>>),
-                    update_track_volumes::<Channel>
-                        .run_if(resource_changed::<ChannelSettings<Channel>>),
+                    settings_event_reader::<Channel>.run_if(on_message::<SettingsEvent<Channel>>),
+                    // Also re-apply when the global channel changes: its volume is a
+                    // master multiplier, so a global change must propagate to every
+                    // channel's live tracks, not just tracks on the global channel.
+                    update_track_volumes::<Channel>.run_if(
+                        resource_changed::<ChannelSettings<Channel>>
+                            .or_eager(resource_changed::<ChannelSettings<GlobalChannel>>),
+                    ),
                 ),
             )
             .add_systems(
                 PostUpdate,
                 (
                     remove_audio_components::<Channel>,
-                    play_event_reader::<Channel>.run_if(on_event::<PlayEvent<Channel>>),
+                    play_event_reader::<Channel>.run_if(on_message::<PlayEvent<Channel>>),
                 ),
             );
 
@@ -115,7 +120,7 @@ fn ecs_system<Channel: ACBounds>(
         (Entity, &AudioFiles, Option<&PlaybackSettings>, &DelayMode),
         (Added<Channel>, Without<AudioSink>),
     >,
-    mut ew: EventWriter<PlayEvent<Channel>>,
+    mut ew: MessageWriter<PlayEvent<Channel>>,
 ) {
     let mut events = Vec::new();
     query
@@ -151,7 +156,7 @@ fn remove_audio_components<Channel: ACBounds>(
 fn play_event_reader<Channel: ACBounds>(
     mut commands: Commands,
     asset_loader: Res<ACAssetLoader>,
-    mut events: EventReader<PlayEvent<Channel>>,
+    mut events: MessageReader<PlayEvent<Channel>>,
     channel_settings: Res<ChannelSettings<Channel>>,
     mut audio_cache: ResMut<AudioCache<Channel>>,
 ) {
@@ -211,7 +216,7 @@ fn play_event_reader<Channel: ACBounds>(
 
 fn settings_event_reader<Channel: ACBounds>(
     mut channel_settings: ResMut<ChannelSettings<Channel>>,
-    mut events: EventReader<SettingsEvent<Channel>>,
+    mut events: MessageReader<SettingsEvent<Channel>>,
 ) {
     events.read().for_each(|event| {
         if let Some(volume) = event.volume {
