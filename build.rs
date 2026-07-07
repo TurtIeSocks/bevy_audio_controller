@@ -534,7 +534,7 @@ impl AudioFile {
         format!(
             "const {}: AudioFile = AudioFile {{
             path: {:?},
-            duration: {},
+            duration: {}f32,
         }};",
             self.snake_case().to_uppercase(),
             self.path,
