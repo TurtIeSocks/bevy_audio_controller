@@ -26,9 +26,7 @@ fn main() {
                 "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<MusicChannel>()
@@ -64,7 +62,7 @@ struct VolumeLabel;
 fn volume_buttons<Channel: ACBounds>(
     up_query: Query<&Interaction, (Changed<Interaction>, With<VolumeUpButton>, With<Channel>)>,
     down_query: Query<&Interaction, (Changed<Interaction>, With<VolumeDownButton>, With<Channel>)>,
-    mut ew: EventWriter<SettingsEvent<Channel>>,
+    mut ew: MessageWriter<SettingsEvent<Channel>>,
     settings: Res<ChannelSettings<Channel>>,
 ) {
     let mut current = settings.get_channel_volume().to_linear();
@@ -90,7 +88,7 @@ fn volume_label<Channel: ACBounds>(
     }
 }
 
-fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
+fn setup(mut commands: Commands, mut ew: MessageWriter<PlayEvent<MusicChannel>>) {
     commands.spawn(Camera2d::default());
     commands
         .spawn((
@@ -134,8 +132,8 @@ fn setup(mut commands: Commands, mut ew: EventWriter<PlayEvent<MusicChannel>>) {
 }
 
 fn play_sfx(
-    mut sfx_ew: EventWriter<PlayEvent<SfxChannel>>,
-    mut global_ew: EventWriter<PlayEvent<GlobalChannel>>,
+    mut sfx_ew: MessageWriter<PlayEvent<SfxChannel>>,
+    mut global_ew: MessageWriter<PlayEvent<GlobalChannel>>,
 ) {
     // Adjusting SFX & Global will affect this sound
     sfx_ew.write(
@@ -158,7 +156,7 @@ fn build_header(parent: &mut RelatedSpawnerCommands<'_, ChildOf>, text: &str) {
             p.spawn((
                 Text::new(text),
                 TextFont {
-                    font_size: TEXT_SIZE,
+                    font_size: TEXT_SIZE.into(),
                     ..default()
                 },
             ));
@@ -188,16 +186,16 @@ fn build_label(parent: &mut RelatedSpawnerCommands<'_, ChildOf>, text: &str, mar
                 height: Val::Px(50.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border_radius: BorderRadius::all(Val::Px(5.)),
                 ..default()
             },
-            BorderRadius::all(Val::Px(5.)),
             BackgroundColor(LABEL_BACKGROUND.into()),
         ))
         .with_children(|parent| {
             parent.spawn((
                 Text::new(format!("{}%", text)),
                 TextFont {
-                    font_size: TEXT_SIZE,
+                    font_size: TEXT_SIZE.into(),
                     ..default()
                 },
                 marker,
@@ -214,16 +212,16 @@ fn build_button(parent: &mut RelatedSpawnerCommands<'_, ChildOf>, text: &str, ma
                 height: Val::Px(50.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border_radius: BorderRadius::all(Val::Px(5.)),
                 ..default()
             },
-            BorderRadius::all(Val::Px(5.)),
             marker,
         ))
         .with_children(|parent| {
             parent.spawn((
                 Text::new(text),
                 TextFont {
-                    font_size: TEXT_SIZE,
+                    font_size: TEXT_SIZE.into(),
                     ..default()
                 },
             ));

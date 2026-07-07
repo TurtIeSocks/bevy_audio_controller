@@ -17,9 +17,7 @@ fn main() {
                 "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
@@ -58,7 +56,7 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn play_sfx(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
+fn play_sfx(mut ew: MessageWriter<PlayEvent<SfxChannel>>) {
     // Plays the spray sound every 200% * duration of `spray.ogg` from the time that the sound is spawned
     // Resulting in a gap between plays
     ew.write(

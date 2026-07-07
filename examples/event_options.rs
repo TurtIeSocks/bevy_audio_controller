@@ -25,9 +25,7 @@ fn main() {
                 "symphonia_core=warn,wgpu=error,symphonia_bundle_mp3=warn,naga=warn".to_string(),
             ..Default::default()
         }))
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(AudioControllerPlugin)
         .register_audio_channel::<SfxChannel>()
@@ -57,7 +55,7 @@ fn setup(mut commands: Commands) {
         });
 }
 
-fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
+fn set_channel_settings(mut ew: MessageWriter<SettingsEvent<SfxChannel>>) {
     // Set the volume for the channel
     let vol_event = SfxChannel::settings_event().with_volume(Volume::Linear(0.5));
 
@@ -84,7 +82,7 @@ fn set_channel_settings(mut ew: EventWriter<SettingsEvent<SfxChannel>>) {
 }
 
 fn play_sfx(
-    mut ew: EventWriter<PlayEvent<SfxChannel>>,
+    mut ew: MessageWriter<PlayEvent<SfxChannel>>,
     parent_query: Query<Entity, With<SfxParent>>,
     player_query: Query<Entity, With<Player>>,
 ) {
@@ -108,7 +106,7 @@ fn play_sfx(
     );
 }
 
-fn force_play(mut ew: EventWriter<PlayEvent<SfxChannel>>) {
+fn force_play(mut ew: MessageWriter<PlayEvent<SfxChannel>>) {
     ew.write(
         SfxChannel::play_event(AudioFiles::FireOGG)
             .with_delay_mode(DelayMode::Immediate)
