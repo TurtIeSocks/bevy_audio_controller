@@ -7,7 +7,7 @@ use bevy::{
         message::{MessageReader, MessageWriter},
         query::{Added, With, Without},
         schedule::{
-            IntoScheduleConfigs,
+            IntoScheduleConfigs, SystemCondition,
             common_conditions::{on_message, resource_changed},
         },
         system::{Commands, Query, Res, ResMut},
@@ -53,8 +53,13 @@ impl ChannelRegistration for App {
                     // update_internal_timer_on_speed_change::<Channel>,
                     update_volume_on_insert::<Channel>,
                     settings_event_reader::<Channel>.run_if(on_message::<SettingsEvent<Channel>>),
-                    update_track_volumes::<Channel>
-                        .run_if(resource_changed::<ChannelSettings<Channel>>),
+                    // Also re-apply when the global channel changes: its volume is a
+                    // master multiplier, so a global change must propagate to every
+                    // channel's live tracks, not just tracks on the global channel.
+                    update_track_volumes::<Channel>.run_if(
+                        resource_changed::<ChannelSettings<Channel>>
+                            .or_eager(resource_changed::<ChannelSettings<GlobalChannel>>),
+                    ),
                 ),
             )
             .add_systems(
